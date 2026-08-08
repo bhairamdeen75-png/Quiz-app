@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth-helpers';
 import { createClient } from '@/lib/supabase/server';
