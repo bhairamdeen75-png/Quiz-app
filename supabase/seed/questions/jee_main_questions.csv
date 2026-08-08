@@ -1,0 +1,3 @@
+question,option_a,option_b,option_c,option_d,correct,chapter,subject,exam,difficulty,hint
+"A particle moves with uniform acceleration. Its velocity changes from 5 m/s to 25 m/s in 4 s. The acceleration is:","2.5 m/s²","5 m/s²","7.5 m/s²","10 m/s²",B,Kinematics,Physics,jee-main,easy,"a = (v - u) / t"
+"Which of the following is a vector quantity?","Speed","Distance","Velocity","Mass",C,Kinematics,Physics,jee-main,easy,"Vector ka magnitude + direction dono hota hai"
