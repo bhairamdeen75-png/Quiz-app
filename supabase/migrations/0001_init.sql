@@ -80,13 +80,13 @@ create table test_series_questions (
 -- ============ TESTS (student ke attempts) ============
 create table tests (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
+  user_id text not null,
   exam_id uuid references exams(id) on delete cascade not null,
   subject_id uuid references subjects(id) on delete set null,
   source text check (source in ('preloaded','ai','pdf')) default 'preloaded',
   title text,
   status text default 'in_progress' check (status in ('in_progress','completed','expired')),
-  question_ids jsonb not null,          -- is test me kaunse questions
+  question_ids jsonb not null,
   answer_mode text default 'final' check (answer_mode in ('instant','final')),
   duration_seconds int,
   started_at timestamptz default now(),
@@ -98,8 +98,6 @@ create table tests (
   skipped_count int,
   accuracy numeric
 );
-create index idx_tests_user on tests(user_id);
-create index idx_tests_status on tests(status);
 
 -- ============ TEST ANSWERS ============
 create table test_answers (
@@ -116,7 +114,7 @@ create table test_answers (
 -- ============ PDF UPLOADS ============
 create table pdf_uploads (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
+  user_id text not null,
   file_name text,
   file_url text,
   status text default 'uploaded' check (status in ('uploaded','processing','done','failed')),
@@ -138,9 +136,9 @@ create table ai_generations (
   created_at timestamptz default now()
 );
 
--- ============ PROFILES (extra user data + role) ============
+-- profiles (id ab text hai — NextAuth user id ke liye)
 create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id text primary key,
   name text,
   avatar_url text,
   role text default 'student' check (role in ('student','admin')),
