@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import ResultSummary from '@/src/components/test/ResultSummary';
+import ResultSummary from '@/components/test/ResultSummary';
 
 export default function ResultPage({ params }: { params: { testId: string } }) {
   const [result, setResult] = useState<any>(null);
