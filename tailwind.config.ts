@@ -16,13 +16,6 @@ const config: Config = {
         sans: ['Inter', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'monospace'],
       },
-      boxShadow: {
-        card: '0 1px 2px rgba(21,33,59,0.04), 0 8px 24px -8px rgba(21,33,59,0.12)',
-        'card-hover': '0 4px 8px rgba(21,33,59,0.06), 0 16px 32px -12px rgba(21,33,59,0.18)',
-      },
-      borderRadius: {
-        xl2: '1.25rem',
-      },
     },
   },
   plugins: [],
