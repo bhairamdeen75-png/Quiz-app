@@ -23,7 +23,7 @@ export default function ContactPage() {
           </span>
           <div>
             <h2 className="font-display text-lg font-bold text-slate-900">Telegram Support</h2>
-            <p className="text-sm text-slate-500">@bkstudyzone</p>
+            <p className="text-sm text-slate-500">Study Zone</p>
           </div>
         </div>
 
@@ -37,7 +37,7 @@ export default function ContactPage() {
         </a>
 
         <p className="mt-4 text-center text-xs text-slate-400">
-          {TELEGRAM_URL}
+          {{TELEGRAM_URL}
         </p>
       </div>
     </div>
