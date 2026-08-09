@@ -1,14 +1,23 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
-import type { Exam } from '@/types';
+// src/app/page.tsx
+import Link from "next/link";
 
-export const dynamic = 'force-dynamic';
+// Apne seed ke 10 exams — agar tumhara data Supabase se aata hai
+// toh woh fetch code yahan (component ke andar, return se pehle) rakho
+const list = [
+  { id: 1, name: "JEE Main", description: "Physics, Chemistry, Maths" },
+  { id: 2, name: "JEE Advanced", description: "Advanced level questions" },
+  { id: 3, name: "NEET UG", description: "Biology, Physics, Chemistry" },
+  { id: 4, name: "NEET PG", description: "Medical PG entrance" },
+  { id: 5, name: "CUET UG", description: "University admissions" },
+  { id: 6, name: "GATE", description: "Engineering entrance" },
+  { id: 7, name: "UPSC Prelims", description: "Civil services" },
+  { id: 8, name: "SSC CGL", description: "Government jobs" },
+  { id: 9, name: "Class 10 Board", description: "Board exams" },
+  { id: 10, name: "Class 12 Board", description: "Board exams" },
+];
 
-export default async function HomePage() {
-  const supabase = createClient();
-  const { data: exams } = await supabase.from('exams').select('*').eq('is_active', true).order('name');
-  const list: Exam[] = exams ?? [];
-
+export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Navbar */}
