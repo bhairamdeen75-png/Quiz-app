@@ -10,48 +10,57 @@ export default async function HomePage() {
   const list: Exam[] = exams ?? [];
 
   return (
-    <div className="space-y-16">
-      {/* HERO */}
-      <section className="py-10 text-center">
-        <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight md:text-6xl">
-          Padhai sabki hai.
-          <br />
-          <span className="text-brand">Test series ab FREE.</span>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Navbar */}
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">Q</div>
+          <span className="text-lg font-bold text-gray-900">QuizGen</span>
+        </div>
+        <a href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700">
+          Dashboard
+        </a>
+      </nav>
+
+      {/* Hero */}
+      <header className="mx-auto max-w-4xl px-6 pb-16 pt-16 text-center">
+        <span className="mb-4 inline-block rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-semibold text-indigo-700">
+          ✨ AI-powered question generation
+        </span>
+        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
+          Quiz banao, seconds mein,
+          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> AI ke saath</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-slate-600">
-          JEE, NEET, SSC, UPSC — AI se live test banao, PDF se quiz banao,
-          ya preloaded test series do. Sab kuch bilkul free.
+        <p className="mx-auto mt-4 max-w-xl text-lg text-gray-600">
+          Chapter select karo, difficulty chuno, aur AI ko 50 questions generate karne do — PDF, practice test, har format mein.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/exams" className="btn-primary text-lg">🚀 Test Shuru Karo</Link>
-          <Link href="/ai-test" className="btn-outline text-lg">🤖 AI Test Generate</Link>
-          <Link href="/pdf-upload" className="btn-outline text-lg">📄 PDF → Quiz</Link>
+        <div className="mt-8 flex justify-center gap-3">
+          <a href="/create" className="rounded-xl bg-indigo-600 px-7 py-3.5 font-semibold text-white shadow-xl shadow-indigo-200 transition hover:scale-[1.02] hover:bg-indigo-700">
+            Quiz Banao — Free
+          </a>
+          <a href="/about" className="rounded-xl border border-gray-300 bg-white px-7 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-50">
+            Kaise kaam karta hai
+          </a>
         </div>
-      </section>
+      </header>
 
-      {/* FEATURES */}
-      <section className="grid gap-6 md:grid-cols-3">
-        <div className="card">
-          <h3 className="text-xl font-bold">🤖 AI Live Test</h3>
-          <p className="mt-2 text-slate-600">
-            Exam, subject aur chapter select karo — AI 10-50 questions banayega.
-            Har answer ke baad turant sahi/galat + hint.
-          </p>
-        </div>
-        <div className="card">
-          <h3 className="text-xl font-bold">📄 PDF → Quiz</h3>
-          <p className="mt-2 text-slate-600">
-            Apni koi bhi PDF bhejo — AI uske questions ko interactive test me badal dega.
-          </p>
-        </div>
-        <div className="card">
-          <h3 className="text-xl font-bold">🏆 Preloaded Series</h3>
-          <p className="mt-2 text-slate-600">
-            10+ exams, 100-500 questions har exam me — exam-level difficulty aur exact timing.
-          </p>
-        </div>
+      {/* Feature cards */}
+      <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-20 sm:grid-cols-3">
+        {[
+          { icon: "🤖", title: "AI Generation", desc: "Pollinations AI se topic-wise MCQs, answer + explanation ke saath" },
+          { icon: "⚡", title: "Instant Tests", desc: "Generate hote hi test create, link share karo, results track karo" },
+          { icon: "📊", title: "Progress Tracking", desc: "Student-wise scores aur weak topics ka analysis" },
+        ].map((f) => (
+          <div key={f.title} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div className="mb-3 text-3xl">{f.icon}</div>
+            <h3 className="font-bold text-gray-900">{f.title}</h3>
+            <p className="mt-1 text-sm text-gray-600">{f.desc}</p>
+          </div>
+        ))}
       </section>
-
+    </div>
+  );
+}
       {/* EXAMS GRID */}
       <section>
         <h2 className="mb-6 text-center text-2xl font-bold">Exams Jo Hum Cover Karte Hain</h2>
