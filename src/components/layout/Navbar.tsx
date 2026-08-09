@@ -9,15 +9,12 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-brand/8 bg-paper/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between py-3 pl-14 pr-4 lg:pl-4">
         <Link href="/" className="flex items-center gap-2 font-display text-lg font-bold text-brand">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm text-gold">📚</span>
           Quiz App
         </Link>
         <div className="flex items-center gap-5 text-sm font-medium">
-          <Link href="/exams" className={navLink}>Exams</Link>
-          <Link href="/ai-test" className={navLink}>AI Test</Link>
-          <Link href="/pdf-upload" className={navLink}>PDF Quiz</Link>
           {session?.user ? (
             <>
               <Link href="/dashboard" className={navLink}>Dashboard</Link>
