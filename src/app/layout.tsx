@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
 import Providers from '@/components/providers/Providers';
 
 export const metadata: Metadata = {
@@ -13,11 +15,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="hi">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
         <Providers>
-          <Navbar />
-          <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
-          <footer className="border-t py-6 text-center text-sm text-slate-500">
-            Made with ❤️ TEAMVB 
-          </footer>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Navbar />
+              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+              <footer className="border-t py-6 text-center text-sm text-slate-500">
+                Made with ❤️ TEAMVB
+              </footer>
+            </div>
+          </div>
         </Providers>
       </body>
     </html>
