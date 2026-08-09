@@ -9,14 +9,39 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   const [detail, setDetail] = useState<ExamDetail | null>(null);
   const [series, setSeries] = useState<Series[]>([]);
   const [selectedSubject, setSelectedSubject] = useState('all');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/exams/${params.examId}`).then((r) => r.json()).then(setDetail);
-    fetch(`/api/series?examId=${params.examId}`).then((r) => r.json()).then(setSeries);
+    let cancelled = false;
+
+    fetch(`/api/exams/${params.examId}`)
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error ?? 'Exam nahi mila');
+        return data as ExamDetail;
+      })
+      .then((data) => { if (!cancelled) setDetail(data); })
+      .catch((e) => { if (!cancelled) setError(e.message); });
+
+    fetch(`/api/series?examId=${params.examId}`)
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setSeries(data ?? []); });
+
+    return () => { cancelled = true; };
   }, [params.examId]);
 
-  if (!detail) return <p className="p-8 text-center text-slate-500">Loading...</p>;
+  // ✅ Galt ID / missing exam → clean message, crash nahi
+  if (error) return (
+    <div className="p-8 text-center">
+      <p className="text-lg font-semibold text-slate-700">{error}</p>
+      <Link href="/exams" className="btn-primary mt-4 inline-block">Sab Exams Dekho</Link>
+    </div>
+  );
 
+  // ✅ detail.exam exist karna chahiye — double guard
+  if (!detail || !detail.exam) return <p className="p-8 text-center text-slate-500">Loading...</p>;
+
+  const subjects = detail.subjects ?? [];
   const filtered = selectedSubject === 'all' ? series : series.filter((s) => s.subject_id === selectedSubject);
 
   return (
@@ -26,9 +51,11 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
         <div>
           <h1 className="text-3xl font-bold">{detail.exam.name}</h1>
           <p className="text-slate-500">{detail.exam.description}</p>
-          <p className="mt-1 text-sm font-semibold text-brand">
-            {detail.rule ? `${detail.rule.duration_minutes} min · ${detail.rule.total_questions} Q · +${detail.rule.correct_marks}/-${detail.rule.negative_marks}` : ''}
-          </p>
+          {detail.rule && (
+            <p className="mt-1 text-sm font-semibold text-brand">
+              {detail.rule.duration_minutes} min · {detail.rule.total_questions} Q · +{detail.rule.correct_marks}/-{detail.rule.negative_marks}
+            </p>
+          )}
         </div>
       </div>
 
@@ -44,7 +71,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
             className={`px-3 py-1 rounded-full text-sm ${selectedSubject === 'all' ? 'bg-brand text-white' : 'bg-slate-200'}`}>
             Sab Subjects
           </button>
-          {detail.subjects.map((s) => (
+          {subjects.map((s) => (
             <button key={s.id} onClick={() => setSelectedSubject(s.id)}
               className={`px-3 py-1 rounded-full text-sm ${selectedSubject === s.id ? 'bg-brand text-white' : 'bg-slate-200'}`}>
               {s.name}
