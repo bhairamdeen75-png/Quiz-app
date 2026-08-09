@@ -16,11 +16,11 @@
 @layer components {
   .btn-primary {
     @apply rounded-xl bg-brand px-5 py-2.5 font-display font-semibold text-white shadow-sm transition
-           hover:bg-brand-dark hover:shadow-card active:scale-[0.98] disabled:opacity-50;
+           hover:bg-brand-dark active:scale-[0.98] disabled:opacity-50;
   }
   .btn-outline {
-    @apply rounded-xl border border-brand/15 bg-white px-5 py-2.5 font-display font-semibold text-brand
-           transition hover:border-brand/30 hover:bg-brand/5;
+    @apply rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-display font-semibold text-brand
+           transition hover:border-brand/30 hover:bg-slate-50;
   }
   .btn-gold {
     @apply rounded-xl bg-gold px-5 py-2.5 font-display font-semibold text-brand shadow-sm transition
@@ -28,10 +28,13 @@
   }
 
   .card {
-    @apply rounded-xl2 border border-brand/8 bg-white p-6 shadow-card transition hover:shadow-card-hover;
+    @apply rounded-2xl border border-slate-200 bg-white p-6 transition;
+    box-shadow: 0 1px 2px rgba(21,33,59,0.04), 0 8px 24px -8px rgba(21,33,59,0.12);
+  }
+  .card:hover {
+    box-shadow: 0 4px 8px rgba(21,33,59,0.06), 0 16px 32px -12px rgba(21,33,59,0.18);
   }
 
-  /* Scorecard-style stat block, used on dashboard */
   .stat-card {
     @apply card flex flex-col items-center gap-1 text-center;
   }
@@ -39,7 +42,7 @@
     @apply font-mono text-4xl font-semibold text-brand tabular-nums;
   }
   .stat-label {
-    @apply text-sm font-medium uppercase tracking-wide text-brand/50;
+    @apply text-sm font-medium uppercase tracking-wide text-slate-500;
   }
 
   .badge {
