@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
           <footer className="border-t py-6 text-center text-sm text-slate-500">
-            powered by ❤️ TEAMVB 
+            Made with ❤️ TEAMVB 
           </footer>
         </Providers>
       </body>
