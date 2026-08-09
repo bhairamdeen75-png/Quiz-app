@@ -1,21 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-paper text-brand font-sans antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-brand;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply rounded-lg bg-brand px-4 py-2 font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50;
+    @apply rounded-xl bg-brand px-5 py-2.5 font-display font-semibold text-white shadow-sm transition
+           hover:bg-brand-dark hover:shadow-card active:scale-[0.98] disabled:opacity-50;
   }
   .btn-outline {
-    @apply rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-100;
+    @apply rounded-xl border border-brand/15 bg-white px-5 py-2.5 font-display font-semibold text-brand
+           transition hover:border-brand/30 hover:bg-brand/5;
   }
+  .btn-gold {
+    @apply rounded-xl bg-gold px-5 py-2.5 font-display font-semibold text-brand shadow-sm transition
+           hover:bg-gold-dark active:scale-[0.98];
+  }
+
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm;
+    @apply rounded-xl2 border border-brand/8 bg-white p-6 shadow-card transition hover:shadow-card-hover;
+  }
+
+  /* Scorecard-style stat block, used on dashboard */
+  .stat-card {
+    @apply card flex flex-col items-center gap-1 text-center;
+  }
+  .stat-value {
+    @apply font-mono text-4xl font-semibold text-brand tabular-nums;
+  }
+  .stat-label {
+    @apply text-sm font-medium uppercase tracking-wide text-brand/50;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full bg-gold-light px-2.5 py-0.5 text-xs font-semibold text-brand;
   }
 }
