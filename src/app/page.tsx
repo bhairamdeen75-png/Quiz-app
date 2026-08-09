@@ -1,20 +1,18 @@
-import Link from 'next/link';
-// src/app/page.tsx
 import Link from "next/link";
 
 // Apne seed ke 10 exams — agar tumhara data Supabase se aata hai
 // toh woh fetch code yahan (component ke andar, return se pehle) rakho
 const list = [
-  { id: 1, name: "JEE Main", description: "Physics, Chemistry, Maths" },
-  { id: 2, name: "JEE Advanced", description: "Advanced level questions" },
-  { id: 3, name: "NEET UG", description: "Biology, Physics, Chemistry" },
-  { id: 4, name: "NEET PG", description: "Medical PG entrance" },
-  { id: 5, name: "CUET UG", description: "University admissions" },
-  { id: 6, name: "GATE", description: "Engineering entrance" },
-  { id: 7, name: "UPSC Prelims", description: "Civil services" },
-  { id: 8, name: "SSC CGL", description: "Government jobs" },
-  { id: 9, name: "Class 10 Board", description: "Board exams" },
-  { id: 10, name: "Class 12 Board", description: "Board exams" },
+  { id: 1, name: "JEE Main", description: "Physics, Chemistry, Maths", icon: "📐" },
+  { id: 2, name: "JEE Advanced", description: "Advanced level questions", icon: "🔬" },
+  { id: 3, name: "NEET UG", description: "Biology, Physics, Chemistry", icon: "🩺" },
+  { id: 4, name: "NEET PG", description: "Medical PG entrance", icon: "⚕️" },
+  { id: 5, name: "CUET UG", description: "University admissions", icon: "🎓" },
+  { id: 6, name: "GATE", description: "Engineering entrance", icon: "⚙️" },
+  { id: 7, name: "UPSC Prelims", description: "Civil services", icon: "🏛️" },
+  { id: 8, name: "SSC CGL", description: "Government jobs", icon: "🏢" },
+  { id: 9, name: "Class 10 Board", description: "Board exams", icon: "📝" },
+  { id: 10, name: "Class 12 Board", description: "Board exams", icon: "📚" },
 ];
 
 export default function Home() {
@@ -67,15 +65,13 @@ export default function Home() {
           </div>
         ))}
       </section>
-    </div>
-  );
-}
+
       {/* EXAMS GRID */}
-      <section>
+      <section className="mx-auto max-w-5xl px-6 pb-20">
         <h2 className="mb-6 text-center text-2xl font-bold">Exams Jo Hum Cover Karte Hain</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((exam) => (
-            <Link key={exam.id} href={`/exams/${exam.id}`} className="card hover:border-brand">
+            <Link key={exam.id} href={`/exams/${exam.id}`} className="card hover:border-brand rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{exam.icon}</span>
                 <div>
