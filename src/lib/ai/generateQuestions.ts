@@ -5,8 +5,8 @@ import { safeParseQuestions } from './validate';
 import { createClient } from '@/lib/supabase/server';
 import type { RawQuestion } from '@/types';
 
-const BATCH_SIZE = 10;          // Vercel 60s limit ke liye chhote batches
-const MAX_RETRIES = 2;
+const BATCH_SIZE = 10;
+const MAX_RETRIES = 3;
 
 export async function generateQuestions(params: {
   examId: string; examName: string; subjectId: string; subjectName: string;
@@ -14,7 +14,7 @@ export async function generateQuestions(params: {
 }): Promise<RawQuestion[]> {
   const supabase = createClient();
 
-  // 1) CACHE CHECK — same request dobara AI call nahi (cost killer)
+  // 1) CACHE CHECK
   const cacheKey = createHash('sha256')
     .update(JSON.stringify([params.examId, params.subjectId, params.chapterNames, params.difficulty, params.count]))
     .digest('hex');
@@ -22,25 +22,30 @@ export async function generateQuestions(params: {
     .from('ai_generations').select('response').eq('cache_key', cacheKey).maybeSingle();
   if (cached?.response) return cached.response as RawQuestion[];
 
-  // 2) BATCH GENERATION — 10-10 questions ke parallel batches
+  // 2) BATCH GENERATION — chhote batches, parallel nahi (rate limit bachao)
   const batches = Math.ceil(params.count / BATCH_SIZE);
-  const tasks = Array.from({ length: batches }, (_, i) =>
-    generateBatch({ ...params, count: Math.min(BATCH_SIZE, params.count - i * BATCH_SIZE) })
-  );
-  const results = (await Promise.all(tasks)).flat();
-  if (results.length === 0) throw new Error('AI ne koi valid question nahi diya');
+  const all: RawQuestion[] = [];
+  for (let i = 0; i < batches; i++) {
+    const batch = await generateBatch({
+      ...params,
+      count: Math.min(BATCH_SIZE, params.count - i * BATCH_SIZE),
+    });
+    all.push(...batch);
+    if (all.length >= params.count) break;
+  }
+  if (all.length === 0) throw new Error('AI ne koi valid question nahi diya');
 
   // 3) CACHE SAVE
   await supabase.from('ai_generations').upsert(
     {
       cache_key: cacheKey, exam_id: params.examId, subject_id: params.subjectId,
       chapter_ids: params.chapterNames, difficulty: params.difficulty,
-      question_count: results.length, response: results,
+      question_count: all.length, response: all,
     },
     { onConflict: 'cache_key' }
   );
 
-  return results;
+  return all.slice(0, params.count);
 }
 
 async function generateBatch(params: {
@@ -53,17 +58,19 @@ async function generateBatch(params: {
       const completion = await aiClient.chat.completions.create({
         model: AI_MODEL,
         messages: [
-          { role: 'system', content: 'You are an exam question generator. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are an exam question generator. Respond with JSON only. No markdown, no explanation text outside JSON.' },
           { role: 'user', content: prompt },
         ],
-        response_format: { type: 'json_object' },
         temperature: 0.7,
+        // ⚠️ response_format HATA diya — Pollinations support nahi karta, error de raha tha
       });
       const content = completion.choices[0]?.message?.content ?? '';
-      const questions = safeParseQuestions(content);
+      // JSON ko markdown code block se clean karo
+      const cleaned = content.replace(/```json|```/g, '').trim();
+      const questions = safeParseQuestions(cleaned);
       if (questions) return questions;
-    } catch {
-      // retry
+    } catch (err) {
+      console.error('Batch attempt failed:', (err as Error)?.message);
     }
   }
   return [];
