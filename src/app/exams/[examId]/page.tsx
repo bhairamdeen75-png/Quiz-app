@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';      // ← NAYI line
+import { LOGIN_REQUIRED_MESSAGE, TELEGRAM_URL } from '@/lib/messages';  // ← NAYI line
 
 interface ExamDetail { exam: any; subjects: any[]; rule: any; }
 interface Series { id: string; name: string; question_count: number; duration_minutes: number; difficulty: string; }
@@ -90,7 +92,10 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
 }
 
 function StartSeriesCard({ series }: { series: Series }) {
+  const router = useRouter();
   const [starting, setStarting] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+
   async function start() {
     setStarting(true);
     const res = await fetch('/api/series', {
@@ -99,10 +104,50 @@ function StartSeriesCard({ series }: { series: Series }) {
       body: JSON.stringify({ seriesId: series.id }),
     });
     const data = await res.json();
-    if (data.testId) window.location.href = `/test/${data.testId}`;
-    else alert(data.error ?? 'Kuch galat hua');
     setStarting(false);
+
+    if (data.testId) { window.location.href = `/test/${data.testId}`; return; }
+
+    // 🔐 Login nahi hai → sundar modal dikhao
+    if (res.status === 401 || data.needsLogin) { setShowLogin(true); return; }
+
+    alert(data.error ?? 'Kuch galat hua');
   }
+
+  // 🔐 Login modal
+  if (showLogin) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+          <div className="rounded-t-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
+            <p className="text-3xl">🔐</p>
+            <h3 className="mt-1 text-xl font-bold text-white">Login Zaroori Hai</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-sm leading-relaxed text-slate-600">{LOGIN_REQUIRED_MESSAGE}</p>
+
+            <a href={TELEGRAM_URL} target="_blank" rel="noreferrer"
+              className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
+              📨 टेलीग्राम पर मैसेज करें
+            </a>
+
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)}
+                className="btn-primary flex-1 py-3">
+                🔑 Login Karo
+              </button>
+              <button onClick={() => setShowLogin(false)}
+                className="btn-outline px-4 py-3">
+                Baad Me
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card">
       <h3 className="font-bold">{series.name}</h3>
