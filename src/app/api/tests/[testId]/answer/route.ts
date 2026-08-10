@@ -1,10 +1,13 @@
+import { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth-helpers';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest, { params }: { params: { testId: string } }) {
   const user = await requireUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) {
+  return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
+}
 
   const { questionId, userAnswer } = await req.json();
   const supabase = createClient();
