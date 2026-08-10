@@ -1,3 +1,4 @@
+import { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
 import { NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth-helpers';
 import { createClient } from '@/lib/supabase/server';
@@ -5,8 +6,9 @@ import type { PublicQuestion } from '@/types';
 
 export async function GET(_req: Request, { params }: { params: { testId: string } }) {
   const user = await requireUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+  if (!user) {
+  return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
+}
   const supabase = createClient();
   const { data: test, error } = await supabase
     .from('tests').select('*').eq('id', params.testId).eq('user_id', user.id).single();
