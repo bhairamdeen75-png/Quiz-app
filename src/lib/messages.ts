@@ -1,5 +1,5 @@
 // Aapka Telegram link yahan daalo (apna channel/ID)
-export const TELEGRAM_URL = 'https://t.me/QuizAppTeamVB';
+export const TELEGRAM_URL = 'https://t.me/bkstudyzone';
 
 // Login ke bina test dene par dikhne wala message
 export const LOGIN_REQUIRED_MESSAGE =
