@@ -15,9 +15,19 @@ export async function POST(_req: Request, { params }: { params: { testId: string
 
   // Already submitted → result wapas
   if (test.status === 'completed') {
-    return NextResponse.json({ testId: test.id, alreadyCompleted: true });
-  }
-
+  return NextResponse.json({
+    testId: test.id,
+    result: {
+      score: test.score,
+      maxScore: test.max_score,
+      correct: test.correct_count,
+      wrong: test.wrong_count,
+      skipped: test.skipped_count,
+      accuracy: test.accuracy,
+    },
+  });
+}
+  
   // Deadline cross ho chuka hai → expired
   const now = Date.now();
   const deadline = getDeadlineMs(test.started_at, test.duration_seconds);
