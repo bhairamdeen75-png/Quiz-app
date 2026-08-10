@@ -5,50 +5,73 @@ import type { Exam } from "@/types";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  // ✅ DB se exams fetch karo — real UUIDs milengi, hardcoded 1-10 nahi
   const supabase = createClient();
   const { data } = await supabase.from("exams").select("*").eq("is_active", true).order("name");
   const exams: Exam[] = data ?? [];
 
   return (
-    <>
-      {/* ═════ HERO ═════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 py-20 text-center text-white">
-        <div className="mx-auto max-w-3xl px-4">
-          <span className="inline-block rounded-full border border-indigo-400/40 bg-indigo-500/20 px-4 py-1.5 text-xs font-bold tracking-wide text-indigo-200">
-            🚀 10+ Exams · AI Tests · Bilkul Free
-          </span>
-          <h1 className="mt-6 text-4xl font-extrabold leading-tight sm:text-5xl">
-            Padho, Practice Karo,
-            <span className="block bg-gradient-to-r from-amber-300 to-pink-400 bg-clip-text text-transparent">
-              Top Karo!
-            </span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-indigo-200">
-            JEE, NEET, SSC, UPSC aur bahut se exams ki preloaded test series —
-            AI se instant test banao, instant feedback pao, apni accuracy dekho.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/exams" className="rounded-xl bg-white px-7 py-3.5 font-bold text-indigo-700 shadow-lg transition hover:bg-indigo-50">
-              📚 Exam Chuno
-            </Link>
-            <Link href="/ai-test" className="rounded-xl border-2 border-white/30 bg-white/10 px-7 py-3.5 font-bold backdrop-blur transition hover:bg-white/20">
-              🤖 AI Test Banao
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Navbar */}
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">Q</div>
+          <span className="text-lg font-bold text-gray-900">QuizGen</span>
         </div>
+        <a href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700">
+          Dashboard
+        </a>
+      </nav>
+
+      {/* Hero */}
+      <header className="mx-auto max-w-4xl px-6 pb-16 pt-16 text-center">
+        <span className="mb-4 inline-block rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-semibold text-indigo-700">
+          ✨ AI-powered question generation
+        </span>
+        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
+          Quiz banao, seconds mein,
+          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> AI ke saath</span>
+        </h1>
+        <p className="mx-auto mt-4 max-w-xl text-lg text-gray-600">
+          Chapter select karo, difficulty chuno, aur AI ko 50 questions generate karne do — PDF, practice test, har format mein.
+        </p>
+        <div className="mt-8 flex justify-center gap-3">
+          {/* ✅ /create (404) → /ai-test (existing page) */}
+          <a href="/ai-test" className="rounded-xl bg-indigo-600 px-7 py-3.5 font-semibold text-white shadow-xl shadow-indigo-200 transition hover:scale-[1.02] hover:bg-indigo-700">
+            Quiz Banao — Free
+          </a>
+          <a href="/about" className="rounded-xl border border-gray-300 bg-white px-7 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-50">
+            Kaise kaam karta hai
+          </a>
+        </div>
+      </header>
+
+      {/* Feature cards */}
+      <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-20 sm:grid-cols-3">
+        {[
+          { icon: "🤖", title: "AI Generation", desc: "Pollinations AI se topic-wise MCQs, answer + explanation ke saath" },
+          { icon: "⚡", title: "Instant Tests", desc: "Generate hote hi test create, link share karo, results track karo" },
+          { icon: "📊", title: "Progress Tracking", desc: "Student-wise scores aur weak topics ka analysis" },
+        ].map((f) => (
+          <div key={f.title} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-md">
+            <div className="mb-3 text-3xl">{f.icon}</div>
+            <h3 className="font-bold text-gray-900">{f.title}</h3>
+            <p className="mt-1 text-sm text-gray-600">{f.desc}</p>
+          </div>
+        ))}
       </section>
 
-      {/* ═════ EXAMS GRID ═════ */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Apna Exam Chuno</h2>
-        <p className="mt-1 text-slate-500">Har exam me preloaded test series, AI test aur PDF quiz available hai.</p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* EXAMS GRID — ab DB se, real UUID links */}
+      <section className="mx-auto max-w-5xl px-6 pb-20">
+        <h2 className="mb-6 text-center text-2xl font-bold">Exams Jo Hum Cover Karte Hain</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {exams.length === 0 && <p className="text-slate-500">Abhi koi exam nahi hai.</p>}
           {exams.map((exam) => (
-            <Link key={exam.id} href={`/exams/${exam.id}`} className="card transition hover:border-brand hover:shadow-md">
+            <Link key={exam.id} href={`/exams/${exam.id}`} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{exam.icon}</span>
+                <span className="text-3xl">{exam.icon}</span>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">{exam.name}</h3>
+                  <h3 className="font-bold">{exam.name}</h3>
                   <p className="text-sm text-slate-500">{exam.description}</p>
                 </div>
               </div>
@@ -56,53 +79,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-
-      {/* ═════ FEATURES ═════ */}
-      <section className="bg-slate-50 py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-2xl font-bold text-slate-900 sm:text-3xl">Kyun QuizApp?</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
-            {[
-              { icon: "📚", title: "Preloaded Test Series", desc: "JEE, NEET, SSC, UPSC — har exam ke liye ready tests, Hindi me." },
-              { icon: "🤖", title: "AI Se Instant Test", desc: "Exam, Subject aur Chapters chuno — AI 10-50 questions banayega." },
-              { icon: "📊", title: "Detailed Results", desc: "Score, Correct, Wrong, Skipped aur Accuracy — sab kuch milega." },
-            ].map((f) => (
-              <div key={f.title} className="card text-center">
-                <p className="text-4xl">{f.icon}</p>
-                <h3 className="mt-3 text-lg font-bold text-slate-900">{f.title}</h3>
-                <p className="mt-1 text-sm text-slate-500">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═════ CTA ═════ */}
-      <section className="bg-gradient-to-r from-indigo-700 to-purple-700 py-14 text-center text-white">
-        <h2 className="text-2xl font-extrabold sm:text-3xl">Test dena shuru karo — bilkul free!</h2>
-        <p className="mx-auto mt-2 max-w-md px-4 text-indigo-100">Login karo aur apni test series, progress aur weak topics track karo.</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/login" className="rounded-xl bg-white px-7 py-3 font-bold text-indigo-700 shadow-lg transition hover:bg-indigo-50">🔑 Login Karo</Link>
-          <Link href="/exams" className="rounded-xl border-2 border-white/40 px-7 py-3 font-bold transition hover:bg-white/10">Exams Dekho</Link>
-        </div>
-      </section>
-
-      {/* ═════ FOOTER ═════ */}
-      <footer className="border-t border-slate-200 bg-white py-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 text-sm font-extrabold text-white">Q</span>
-            <span className="text-sm font-semibold text-slate-700">QuizApp <span className="font-normal text-slate-400">— AI se banao, AI se seekho</span></span>
-          </div>
-          <div className="flex gap-5 text-sm text-slate-500">
-            <Link href="/exams" className="hover:text-brand">Exams</Link>
-            <Link href="/ai-test" className="hover:text-brand">AI Test</Link>
-            <Link href="/dashboard" className="hover:text-brand">Dashboard</Link>
-            <Link href="/login" className="hover:text-brand">Login</Link>
-          </div>
-          <p className="text-xs text-slate-400">© 2026 QuizApp · Made with ❤️ TEAMVB</p>
-        </div>
-      </footer>
-    </>
+    </div>
   );
 }
