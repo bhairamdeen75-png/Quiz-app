@@ -5,776 +5,243 @@ import type { Exam } from "@/types";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  // ✅ DB se exams fetch karo — real UUIDs milengi, hardcoded 1-10 nahi
+  // DB se exams — real UUIDs, safe fetch
   const supabase = createClient();
-  const { data } = await supabase.from("exams").select("*").eq("is_active", true).order("name");
+  const { data } = await supabase
+    .from("exams").select("*").eq("is_active", true).order("name");
   const exams: Exam[] = data ?? [];
 
+  const iconGradients = [
+    "linear-gradient(135deg,#6366f1,#8b5cf6)",
+    "linear-gradient(135deg,#ec4899,#f43f5e)",
+    "linear-gradient(135deg,#06b6d4,#3b82f6)",
+    "linear-gradient(135deg,#f59e0b,#ef4444)",
+    "linear-gradient(135deg,#10b981,#14b8a6)",
+    "linear-gradient(135deg,#8b5cf6,#d946ef)",
+  ];
+
   return (
-    <>
-      {/* ═══════════════════════════════════════════════════════════════
-          ULTRA PRO ANIMATIONS & STYLES — ADDED ON TOP OF ORIGINAL
-      ═══════════════════════════════════════════════════════════════ */}
+    <div className="relative min-h-screen overflow-hidden bg-[#0b0a1f] text-white">
+      {/* ══════ SAFE CSS (sirf animations — koi JS nahi) ══════ */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-        * { font-family: 'Inter', -apple-system, sans-serif; }
-
-        /* ── Floating orbs ── */
-        @keyframes orb-float-1 {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33%       { transform: translate(30px, -40px) scale(1.05); }
-          66%       { transform: translate(-20px, 20px) scale(0.95); }
-        }
-        @keyframes orb-float-2 {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33%       { transform: translate(-40px, 30px) scale(1.08); }
-          66%       { transform: translate(25px, -20px) scale(0.92); }
-        }
-        @keyframes orb-float-3 {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          50%       { transform: translate(20px, -30px) scale(1.04); }
-        }
-
-        /* ── Shimmer text ── */
-        @keyframes shimmer-move {
-          0%   { background-position: -300% center; }
-          100% { background-position: 300% center; }
-        }
+        .orb { position: absolute; border-radius: 9999px; filter: blur(90px); opacity: 0.45; pointer-events: none; }
+        @keyframes orb1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(60px,-50px) scale(1.15); } }
+        @keyframes orb2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-70px,40px) scale(1.1); } }
+        @keyframes orb3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,60px) scale(0.9); } }
+        @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+        @keyframes shimmerMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         .shimmer-text {
-          background: linear-gradient(90deg,
-            #6366f1 0%, #8b5cf6 20%, #c084fc 40%,
-            #f472b6 55%, #8b5cf6 75%, #6366f1 100%);
-          background-size: 300% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer-move 5s linear infinite;
+          background: linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa,#fbbf24);
+          background-size: 200% auto;
+          -webkit-background-clip: text; background-clip: text;
+          color: transparent;
+          animation: shimmerMove 4s linear infinite;
         }
-
-        /* ── Glow pulse on primary CTA ── */
-        @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 24px 4px rgba(99,102,241,0.45); }
-          50%       { box-shadow: 0 0 48px 12px rgba(139,92,246,0.6); }
+        .grid-bg {
+          background-image:
+            linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px);
+          background-size: 46px 46px;
+          mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
         }
-        .btn-glow { animation: glow-pulse 3s ease-in-out infinite; }
-
-        /* ── Gradient border on hover cards ── */
-        .grad-border-card {
-          position: relative;
-          background: white;
-          border-radius: 20px;
-          isolation: isolate;
-          transition: transform 0.35s cubic-bezier(.34,1.56,.64,1),
-                      box-shadow 0.35s ease;
-        }
-        .grad-border-card::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #6366f1);
-          z-index: -1;
-          opacity: 0;
-          transition: opacity 0.35s ease;
-        }
-        .grad-border-card:hover::before { opacity: 1; }
-        .grad-border-card:hover {
-          transform: translateY(-10px) scale(1.01);
-          box-shadow: 0 28px 56px rgba(99,102,241,0.18);
-        }
-
-        /* ── Exam card hover ── */
-        .exam-card {
-          transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
-          position: relative;
-          overflow: hidden;
-        }
-        .exam-card::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(139,92,246,0.04));
-          opacity: 0;
-          transition: opacity 0.3s;
-        }
-        .exam-card:hover {
-          transform: translateY(-6px) scale(1.025);
-          box-shadow: 0 20px 44px rgba(99,102,241,0.14);
-          border-color: #6366f1 !important;
-        }
-        .exam-card:hover::after { opacity: 1; }
-
-        /* ── Step card ── */
-        .step-card {
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .step-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 20px 40px rgba(99,102,241,0.12);
-        }
-
-        /* ── Sticky nav blur ── */
-        .nav-glass {
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
-          background: rgba(255,255,255,0.82);
-          border-bottom: 1px solid rgba(99,102,241,0.1);
-        }
-
-        /* ── Fade-up (just CSS, no JS needed for hero) ── */
-        .fade-up {
-          opacity: 0;
-          transform: translateY(24px);
-          animation: fade-up-in 0.7s ease forwards;
-        }
-        .fade-up-1 { animation-delay: 0.05s; }
-        .fade-up-2 { animation-delay: 0.18s; }
-        .fade-up-3 { animation-delay: 0.32s; }
-        .fade-up-4 { animation-delay: 0.46s; }
-        .fade-up-5 { animation-delay: 0.62s; }
-        @keyframes fade-up-in {
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── Marquee ── */
-        @keyframes marquee-scroll {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-        .marquee-track {
-          display: flex;
-          width: max-content;
-          animation: marquee-scroll 28s linear infinite;
-          gap: 0;
-        }
-        .marquee-track:hover { animation-play-state: paused; }
-
-        /* ── Stats number glow ── */
-        .stat-number {
-          background: linear-gradient(135deg, #fff 0%, #c7d2fe 60%, #a5b4fc 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        /* ── Shimmer sweep on dark CTA btn ── */
-        .btn-sweep {
-          position: relative;
-          overflow: hidden;
-        }
-        .btn-sweep::after {
-          content: '';
-          position: absolute;
-          top: 0; left: -100%;
-          width: 60%; height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-          transform: skewX(-20deg);
-          transition: left 0.5s ease;
-        }
-        .btn-sweep:hover::after { left: 150%; }
-
-        /* ── Tag pill ── */
-        .trust-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 5px 14px;
-          border-radius: 50px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #4f46e5;
-          background: rgba(99,102,241,0.08);
-          border: 1px solid rgba(99,102,241,0.18);
-          white-space: nowrap;
-        }
-
-        /* ── Reduced motion ── */
-        @media (prefers-reduced-motion: reduce) {
-          .orb-1, .orb-2, .orb-3 { animation: none !important; }
-          .shimmer-text             { animation: none !important; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-          .btn-glow                 { animation: none !important; }
-          .marquee-track            { animation: none !important; }
-          .fade-up                  { opacity: 1 !important; transform: none !important; animation: none !important; }
-        }
-
-        /* ── Responsive helpers ── */
-        @media (max-width: 640px) {
-          .hide-mobile { display: none !important; }
-        }
+        .exam-card { transition: all 0.3s ease; }
+        .exam-card:hover { transform: translateY(-6px); border-color: rgba(129,140,248,0.6); box-shadow: 0 24px 60px -16px rgba(99,102,241,0.45); }
+        .btn-primary-fancy { transition: all 0.25s ease; box-shadow: 0 12px 40px -8px rgba(99,102,241,0.6); }
+        .btn-primary-fancy:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 18px 50px -8px rgba(139,92,246,0.7); }
+        .btn-ghost-fancy { transition: all 0.25s ease; }
+        .btn-ghost-fancy:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
       `}</style>
 
-      {/* ══════════════════════════════════════════════════════════════
-          ROOT WRAPPER
-      ══════════════════════════════════════════════════════════════ */}
-      <div style={{ minHeight: '100vh', background: '#fafaff', overflowX: 'hidden', position: 'relative' }}>
+      {/* ═══════════════════ HERO ═══════════════════ */}
+      <section className="relative flex min-h-[92vh] items-center overflow-hidden">
+        {/* Glow orbs */}
+        <div aria-hidden="true" className="orb h-96 w-96 bg-indigo-600" style={{ top: "-60px", left: "-80px", animation: "orb1 12s ease-in-out infinite" }} />
+        <div aria-hidden="true" className="orb h-80 w-80 bg-purple-600" style={{ top: "30%", right: "-100px", animation: "orb2 15s ease-in-out infinite" }} />
+        <div aria-hidden="true" className="orb h-72 w-72 bg-pink-600" style={{ bottom: "-60px", left: "35%", animation: "orb3 18s ease-in-out infinite" }} />
 
-        {/* ─── BACKGROUND ORBS (decorative, fixed) ─── */}
-        <div aria-hidden="true" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-          <div className="orb-1" style={{
-            position: 'absolute', top: '8%', left: '2%',
-            width: 520, height: 520, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)',
-            filter: 'blur(60px)',
-            animation: 'orb-float-1 12s ease-in-out infinite',
-          }} />
-          <div className="orb-2" style={{
-            position: 'absolute', top: '25%', right: '3%',
-            width: 380, height: 380, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)',
-            filter: 'blur(50px)',
-            animation: 'orb-float-2 16s ease-in-out infinite',
-          }} />
-          <div className="orb-3" style={{
-            position: 'absolute', bottom: '15%', left: '35%',
-            width: 440, height: 440, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)',
-            filter: 'blur(55px)',
-            animation: 'orb-float-3 20s ease-in-out infinite',
-          }} />
-        </div>
+        {/* Grid pattern */}
+        <div aria-hidden="true" className="grid-bg absolute inset-0" />
 
-        {/* ═══ CONTENT LAYER ═══ */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Content */}
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-24 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/15 px-5 py-2 text-xs font-bold tracking-widest text-indigo-200 uppercase backdrop-blur">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            10+ Exams · AI Powered · Bilkul Free
+          </span>
 
-          {/* ──────────────────────────────────────────────────────────
-              ORIGINAL NAVBAR — ultra enhanced with glassmorphism
-          ────────────────────────────────────────────────────────── */}
-          <nav className="nav-glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <h1 className="mt-7 text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+            Padho, Practice Karo,
+            <span className="shimmer-text block pt-2">Top Karo!</span>
+          </h1>
 
-              {/* Logo — original Q logo, enhanced */}
-              <div className="flex items-center gap-3">
-                <div style={{
-                  width: 42, height: 42, borderRadius: 13,
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20, fontWeight: 900, color: 'white',
-                  boxShadow: '0 6px 20px rgba(99,102,241,0.38)',
-                  letterSpacing: '-1px',
-                }}>Q</div>
-                <span style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
-                  Quiz<span style={{ color: '#6366f1' }}>app</span>
-                </span>
-              </div>
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+            JEE, NEET, SSC, UPSC aur bahut se exams ki preloaded test series.
+            AI se instant test banao, har answer pe turant feedback pao,
+            aur apni accuracy real-time dekho.
+          </p>
 
-              {/* NEW: Centre nav links */}
-              <div className="hide-mobile" style={{ display: 'flex', gap: 28 }}>
-                {[
-                  { href: '/about', label: 'How to Work' },
-                  { href: '/ai-test', label: 'AI Test' },
-                  { href: '#exams', label: 'Exams' },
-                ].map(l => (
-                  <a key={l.href} href={l.href} style={{
-                    fontSize: 14, fontWeight: 500, color: '#64748b',
-                    textDecoration: 'none', transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
-                  >{l.label}</a>
-                ))}
-              </div>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+            <Link href="/exams" className="btn-primary-fancy inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 text-base font-bold">
+              📚 Exam Chuno
+            </Link>
+            <Link href="/ai-test" className="btn-ghost-fancy inline-flex items-center gap-2 rounded-2xl border-2 border-white/25 bg-white/5 px-8 py-4 text-base font-bold backdrop-blur">
+              🤖 AI Test Banao
+            </Link>
+          </div>
 
-              {/* Original Dashboard link — enhanced */}
-              <a href="/dashboard" className="btn-sweep" style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: 'white', padding: '10px 22px', borderRadius: 50,
-                fontSize: 14, fontWeight: 700, textDecoration: 'none',
-                boxShadow: '0 4px 16px rgba(99,102,241,0.38)',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}>
-                Dashboard <span style={{ opacity: 0.8 }}>→</span>
-              </a>
-            </div>
-          </nav>
-
-          {/* ──────────────────────────────────────────────────────────
-              ORIGINAL HERO — dramatically enhanced
-          ────────────────────────────────────────────────────────── */}
-          <header style={{
-            background: 'linear-gradient(160deg, #eef2ff 0%, #ffffff 45%, #faf5ff 75%, #fff1f2 100%)',
-            padding: '90px 24px 80px',
-          }}>
-            <div className="mx-auto max-w-4xl" style={{ textAlign: 'center' }}>
-
-              {/* Original badge — enhanced */}
-              <div className="fade-up fade-up-1" style={{ marginBottom: 24 }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '7px 18px', borderRadius: 50,
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))',
-                  border: '1.5px solid rgba(99,102,241,0.25)',
-                  fontSize: 13, fontWeight: 700, color: '#6366f1',
-                }}>
-                  <span style={{
-                    width: 7, height: 7, borderRadius: '50%',
-                    background: '#6366f1', display: 'inline-block',
-                    boxShadow: '0 0 8px #6366f1',
-                  }} />
-                  ✨ AI-powered question generation
-                </span>
-              </div>
-
-              {/* Original H1 — enhanced with shimmer */}
-              <h1 className="fade-up fade-up-2" style={{
-                fontSize: 'clamp(38px, 7vw, 80px)',
-                fontWeight: 900, lineHeight: 1.0,
-                letterSpacing: '-3px', color: '#0f172a',
-                marginBottom: 28,
-              }}>
-                Quiz banao, seconds mein,
-                <br />
-                <span className="shimmer-text">AI ke saath</span>
-              </h1>
-
-              {/* Original description */}
-              <p className="fade-up fade-up-3" style={{
-                maxWidth: 560, margin: '0 auto 16px',
-                fontSize: 18, lineHeight: 1.75, color: '#475569',
-              }}>
-                Chapter select karo, difficulty chuno, aur AI ko 50 questions generate karne do — PDF, practice test, har format mein.
-              </p>
-
-              {/* NEW: Supporting sub-copy */}
-              <p className="fade-up fade-up-3" style={{
-                maxWidth: 420, margin: '0 auto 40px',
-                fontSize: 14, lineHeight: 1.65, color: '#94a3b8',
-              }}>
-                India ke top competitive exams ke liye — UPSC, JEE, NEET, SSC, aur zyada.
-              </p>
-
-              {/* Original CTA buttons — enhanced */}
-              <div className="fade-up fade-up-4" style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 36 }}>
-                {/* ✅ Original: /ai-test */}
-                <a href="/ai-test" className="btn-glow btn-sweep" style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  color: 'white', padding: '17px 36px', borderRadius: 14,
-                  fontSize: 15, fontWeight: 800, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  transition: 'transform 0.2s',
-                }}>
-                  🚀 Make Quiz or Test
-                </a>
-                {/* ✅ Original: /about */}
-                <a href="/about" style={{
-                  background: 'white', color: '#374151',
-                  padding: '17px 32px', borderRadius: 14,
-                  fontSize: 15, fontWeight: 700, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  border: '2px solid #e2e8f0',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
-                  transition: 'all 0.2s',
-                }}>
-                  How to Work ↗
-                </a>
-              </div>
-
-              {/* NEW: Trust pills */}
-              <div className="fade-up fade-up-5" style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-                {['No signup chahiye', 'Free to try', 'Hindi + English', 'Instant results'].map(tag => (
-                  <span key={tag} className="trust-pill">✓ {tag}</span>
-                ))}
+          {/* Floating glass cards (dekhaane ke liye) */}
+          <div aria-hidden="true" className="pointer-events-none relative mx-auto mt-16 hidden max-w-3xl select-none sm:block">
+            <div className="absolute left-0 top-2 w-44 rounded-2xl border border-white/10 bg-white/5 p-4 text-left backdrop-blur" style={{ animation: "floaty 6s ease-in-out infinite" }}>
+              <p className="text-xs text-slate-400">Accuracy</p>
+              <p className="text-2xl font-black text-emerald-400">94%</p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-[94%] rounded-full bg-gradient-to-r from-emerald-400 to-teal-400" />
               </div>
             </div>
-          </header>
-
-          {/* ──────────────────────────────────────────────────────────
-              NEW: STATS DARK BAND
-          ────────────────────────────────────────────────────────── */}
-          <section style={{
-            background: 'linear-gradient(135deg, #0c0b17, #1e1b4b, #2e1065)',
-            padding: '60px 24px',
-          }}>
-            {/* NEW: Marquee of exam names just above stats */}
-            <div style={{ overflow: 'hidden', marginBottom: 48, maskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)' }}>
-              <div className="marquee-track">
-                {[...Array(2)].map((_, ri) =>
-                  ['UPSC', 'JEE Main', 'NEET UG', 'SSC CGL', 'IBPS PO', 'CAT', 'GATE', 'NDA', 'RRB NTPC', 'CLAT', 'CUET', 'AFCAT'].map((exam) => (
-                    <span key={`${ri}-${exam}`} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 10,
-                      padding: '10px 28px', marginRight: 16, borderRadius: 50,
-                      background: 'rgba(99,102,241,0.12)',
-                      border: '1px solid rgba(99,102,241,0.2)',
-                      color: '#a5b4fc', fontSize: 14, fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
-                      {exam}
-                    </span>
-                  ))
-                )}
+            <div className="absolute right-0 top-10 w-52 rounded-2xl border border-white/10 bg-white/5 p-4 text-left backdrop-blur" style={{ animation: "floaty 7s ease-in-out infinite 1s" }}>
+              <p className="text-xs text-slate-400">Abhi chal raha hai</p>
+              <p className="mt-1 text-sm font-bold text-white">JEE Main — Physics</p>
+              <p className="mt-1 text-xs text-slate-400">Question 4 / 15</p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400" />
               </div>
             </div>
+          </div>
 
-            {/* Stats grid */}
-            <div className="mx-auto max-w-5xl" style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              gap: 40, textAlign: 'center',
-            }}>
-              {[
-                { icon: '❓', num: '50K+', label: 'Questions Generated' },
-                { icon: '📝', num: '5K+',  label: 'Tests Created' },
-                { icon: '🎯', num: '20+',  label: 'Exams Covered' },
-                { icon: '⚡', num: '99%',  label: 'AI Accuracy' },
-              ].map(s => (
-                <div key={s.label}>
-                  <div style={{ fontSize: 30, marginBottom: 10 }}>{s.icon}</div>
-                  <div className="stat-number" style={{
-                    fontSize: 'clamp(34px, 5vw, 54px)',
-                    fontWeight: 900, letterSpacing: '-2px', lineHeight: 1,
-                  }}>{s.num}</div>
-                  <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 10, fontWeight: 600 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ──────────────────────────────────────────────────────────
-              ORIGINAL FEATURE CARDS — ultra enhanced
-          ────────────────────────────────────────────────────────── */}
-          <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-20 sm:grid-cols-3" style={{ paddingTop: 80 }}>
-            {/* NEW: Section eyebrow */}
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', color: '#6366f1', textTransform: 'uppercase' }}>
-                Kyun QuizApp?
-              </span>
-              <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 900, color: '#0f172a', marginTop: 10, letterSpacing: '-1px' }}>
-                Sabse powerful quiz platform
-              </h2>
-            </div>
-
-            {/* ORIGINAL 3 feature cards — enhanced in-place */}
+          {/* Stats row */}
+          <div className="mx-auto mt-14 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
             {[
-              {
-                icon: '🤖', title: 'AI Generation',
-                desc: 'Pollinations AI se topic-wise MCQs, answer + explanation ke saath',
-                grad: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                glow: 'rgba(99,102,241,0.22)',
-              },
-              {
-                icon: '⚡', title: 'Instant Tests',
-                desc: 'Generate hote hi test create, link share karo, results track karo',
-                grad: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-                glow: 'rgba(245,158,11,0.18)',
-              },
-              {
-                icon: '📊', title: 'Progress Tracking',
-                desc: 'Student-wise scores aur weak topics ka analysis',
-                grad: 'linear-gradient(135deg, #10b981, #059669)',
-                glow: 'rgba(16,185,129,0.18)',
-              },
-            ].map(f => (
-              <div key={f.title} className="grad-border-card" style={{
-                padding: '32px 28px',
-                boxShadow: `0 8px 32px ${f.glow}, 0 2px 8px rgba(0,0,0,0.04)`,
-                border: '1.5px solid rgba(226,232,240,0.9)',
-              }}>
-                {/* Icon bubble */}
-                <div style={{
-                  width: 60, height: 60, borderRadius: 18,
-                  background: f.grad,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 28, marginBottom: 22,
-                  boxShadow: `0 10px 24px ${f.glow}`,
-                }}>{f.icon}</div>
-
-                <h3 style={{ fontWeight: 800, fontSize: 17, color: '#0f172a', marginBottom: 10 }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.65 }}>{f.desc}</p>
-
-                {/* NEW: subtle "learn more" hint */}
-                <div style={{ marginTop: 20, fontSize: 13, color: '#6366f1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  Explore <span>→</span>
-                </div>
+              ["10+", "Exams"],
+              ["500+", "Questions"],
+              ["100%", "Free"],
+              ["24/7", "AI Available"],
+            ].map(([num, label]) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 backdrop-blur">
+                <p className="text-2xl font-black text-transparent" style={{ backgroundImage: "linear-gradient(90deg,#a5b4fc,#f0abfc)", WebkitBackgroundClip: "text", backgroundClip: "text" }}>{num}</p>
+                <p className="mt-1 text-xs font-semibold tracking-wide text-slate-400 uppercase">{label}</p>
               </div>
             ))}
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* ──────────────────────────────────────────────────────────
-              NEW SECTION: HOW IT WORKS (3 steps)
-          ────────────────────────────────────────────────────────── */}
-          <section style={{
-            background: 'linear-gradient(160deg, #f8faff 0%, #f0f4ff 100%)',
-            padding: '88px 24px',
-            borderTop: '1px solid rgba(99,102,241,0.08)',
-            borderBottom: '1px solid rgba(99,102,241,0.08)',
-          }}>
-            <div className="mx-auto max-w-5xl">
-              <div style={{ textAlign: 'center', marginBottom: 60 }}>
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', color: '#6366f1', textTransform: 'uppercase' }}>
-                  Simple Process
+      {/* ═══════════════════ EXAMS ═══════════════════ */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 py-20">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold tracking-widest text-indigo-400 uppercase">Test Series</p>
+            <h2 className="mt-2 text-3xl font-black sm:text-4xl">Apna Exam Chuno</h2>
+            <p className="mt-2 max-w-md text-slate-400">
+              Har exam me preloaded test series, AI test aur PDF quiz available.
+            </p>
+          </div>
+          <Link href="/exams" className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-bold text-indigo-300 transition hover:bg-white/10">
+            Sab Dekho →
+          </Link>
+        </div>
+
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {exams.map((exam, i) => (
+            <Link
+              key={exam.id}
+              href={`/exams/${exam.id}`}
+              className="exam-card group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur"
+            >
+              {/* Hover glow */}
+              <div aria-hidden="true" className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-0 blur-2xl transition group-hover:opacity-60" style={{ background: iconGradients[i % iconGradients.length] }} />
+
+              <div className="relative flex items-center gap-4">
+                <span
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg"
+                  style={{ background: iconGradients[i % iconGradients.length] }}
+                >
+                  {exam.icon}
                 </span>
-                <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, color: '#0f172a', marginTop: 10, letterSpacing: '-1px' }}>
-                  3 Steps mein shuru karo
-                </h2>
-                <p style={{ color: '#64748b', marginTop: 12, fontSize: 16, maxWidth: 460, margin: '12px auto 0' }}>
-                  Itna aasan hai ki pehli baar mein hi perfect test ban jaata hai.
-                </p>
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 28,
-              }}>
-                {[
-                  {
-                    step: '01', icon: '🎯',
-                    title: 'Exam & Chapter Chuno',
-                    desc: 'Apna exam choose karo — UPSC, JEE, NEET ya koi bhi. Phir chapter ya specific topic select karo.',
-                    color: '#6366f1',
-                  },
-                  {
-                    step: '02', icon: '🤖',
-                    title: 'AI Generate Karta Hai',
-                    desc: 'Ek click mein AI 50 unique MCQs banata hai — correct answers aur detailed explanations ke saath.',
-                    color: '#8b5cf6',
-                  },
-                  {
-                    step: '03', icon: '📤',
-                    title: 'Share & Track Karo',
-                    desc: 'Test link share karo students ke saath, woh denge, aur tum real-time results aur analytics dekho.',
-                    color: '#ec4899',
-                  },
-                ].map((s, i) => (
-                  <div key={s.step} className="step-card" style={{
-                    background: 'white', borderRadius: 20, padding: '32px 28px',
-                    border: '1.5px solid rgba(226,232,240,0.9)',
-                    boxShadow: '0 4px 20px rgba(99,102,241,0.06)',
-                    position: 'relative', overflow: 'hidden',
-                  }}>
-                    {/* Big step number — decorative background */}
-                    <div style={{
-                      position: 'absolute', top: -10, right: 16,
-                      fontSize: 80, fontWeight: 900, lineHeight: 1,
-                      color: 'rgba(99,102,241,0.05)', letterSpacing: '-3px',
-                      userSelect: 'none', pointerEvents: 'none',
-                    }}>{s.step}</div>
-
-                    {/* Icon */}
-                    <div style={{
-                      width: 64, height: 64, borderRadius: 18,
-                      background: `linear-gradient(135deg, ${s.color}22, ${s.color}44)`,
-                      border: `2px solid ${s.color}33`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 30, marginBottom: 20,
-                    }}>{s.icon}</div>
-
-                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: s.color, marginBottom: 10 }}>
-                      STEP {s.step}
-                    </div>
-                    <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', marginBottom: 12 }}>{s.title}</h3>
-                    <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.7 }}>{s.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ──────────────────────────────────────────────────────────
-              ORIGINAL EXAMS GRID — ultra enhanced
-          ────────────────────────────────────────────────────────── */}
-          <section id="exams" className="mx-auto max-w-5xl px-6 pb-20" style={{ paddingTop: 88 }}>
-            {/* Section header — enhanced from original h2 */}
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', color: '#6366f1', textTransform: 'uppercase' }}>
-                Coverage
-              </span>
-              <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 900, color: '#0f172a', marginTop: 10, letterSpacing: '-1px' }}>
-                Exams Jo Hum Cover Karte Hain
-              </h2>
-              <p style={{ color: '#64748b', marginTop: 12, fontSize: 16 }}>
-                India ke sabse popular competitive exams ke liye AI-generated questions
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Original empty state */}
-              {exams.length === 0 && (
-                <div style={{
-                  gridColumn: '1 / -1', textAlign: 'center',
-                  padding: '64px 32px', borderRadius: 24,
-                  background: 'rgba(99,102,241,0.04)',
-                  border: '2px dashed rgba(99,102,241,0.2)',
-                }}>
-                  <div style={{ fontSize: 52, marginBottom: 16 }}>📚</div>
-                  <p style={{ color: '#64748b', fontWeight: 600, fontSize: 16 }}>Abhi koi exam nahi hai.</p>
-                  <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 8 }}>Jald hi naye exams add honge!</p>
+                <div>
+                  <h3 className="text-lg font-bold text-white">{exam.name}</h3>
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-400">{exam.description}</p>
                 </div>
-              )}
+              </div>
 
-              {/* ✅ ORIGINAL: Real UUID links from DB */}
-              {exams.map((exam) => (
-                <Link key={exam.id} href={`/exams/${exam.id}`} className="exam-card" style={{
-                  display: 'block', textDecoration: 'none',
-                  borderRadius: 18, border: '1.5px solid rgba(226,232,240,0.9)',
-                  background: 'white', padding: '20px 20px',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    {/* Icon container */}
-                    <div style={{
-                      width: 54, height: 54, borderRadius: 15, flexShrink: 0,
-                      background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))',
-                      border: '1.5px solid rgba(99,102,241,0.12)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 28,
-                    }}>{exam.icon}</div>
+              <div className="relative mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                <span className="text-xs font-semibold text-indigo-300">Test Series Dekho</span>
+                <span className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-indigo-300">→</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-                    {/* Text */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 style={{ fontWeight: 800, fontSize: 15, color: '#0f172a', marginBottom: 3 }}>{exam.name}</h3>
-                      <p style={{ fontSize: 13, color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {exam.description}
-                      </p>
-                    </div>
+      {/* ═══════════════════ HOW IT WORKS ═══════════════════ */}
+      <section className="relative z-10 border-t border-white/10 bg-white/[0.03] py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-center text-xs font-bold tracking-widest text-indigo-400 uppercase">Kaise Kaam Karta Hai</p>
+          <h2 className="mt-2 text-center text-3xl font-black sm:text-4xl">Sirf 3 Steps</h2>
 
-                    {/* NEW: Arrow badge */}
-                    <div style={{
-                      width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                      background: 'rgba(99,102,241,0.08)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#6366f1', fontSize: 15, fontWeight: 700,
-                      transition: 'background 0.2s',
-                    }}>→</div>
-                  </div>
-                </Link>
-              ))}
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            {[
+              { step: "01", icon: "🎯", title: "Exam Chuno", desc: "JEE, NEET, SSC, UPSC — jo exam dena hai wo chuno." },
+              { step: "02", icon: "⚡", title: "Test Shuru Karo", desc: "Preloaded series ya AI se banaya test — instant start." },
+              { step: "03", icon: "🏆", title: "Result Dekho", desc: "Score, correct, wrong, accuracy — sab detailed analysis." },
+            ].map((s) => (
+              <div key={s.step} className="relative rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur">
+                <span className="absolute right-5 top-4 text-4xl font-black text-white/5">{s.step}</span>
+                <p className="text-4xl">{s.icon}</p>
+                <h3 className="mt-4 text-lg font-bold text-white">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ CTA ═══════════════════ */}
+      <section className="relative z-10 overflow-hidden py-24">
+        <div aria-hidden="true" className="orb h-72 w-72 bg-purple-600" style={{ top: "-40px", left: "10%", animation: "orb2 14s ease-in-out infinite" }} />
+        <div aria-hidden="true" className="orb h-72 w-72 bg-indigo-600" style={{ bottom: "-60px", right: "10%", animation: "orb1 16s ease-in-out infinite" }} />
+
+        <div className="relative z-10 mx-auto max-w-3xl px-4 text-center">
+          <h2 className="text-3xl font-black sm:text-5xl">
+            Aaj Hi <span className="shimmer-text">Test Dena</span> Shuru Karo!
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-slate-400">
+            Login karo aur apni test series, progress aur weak topics track karo — bilkul free.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Link href="/login" className="btn-primary-fancy rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 font-bold">
+              🔑 Abhi Login Karo
+            </Link>
+            <Link href="/exams" className="btn-ghost-fancy rounded-2xl border-2 border-white/25 bg-white/5 px-8 py-4 font-bold">
+              Exams Browse Karo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ FOOTER ═══════════════════ */}
+      <footer className="relative z-10 border-t border-white/10 py-10">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-black">
+              Q
+            </span>
+            <div>
+              <p className="font-bold">QuizApp</p>
+              <p className="text-xs text-slate-500">AI se banao, AI se seekho</p>
             </div>
-          </section>
-
-          {/* ──────────────────────────────────────────────────────────
-              NEW: BOTTOM DARK CTA SECTION
-          ────────────────────────────────────────────────────────── */}
-          <section style={{
-            background: 'linear-gradient(145deg, #0c0b17 0%, #1e1b4b 50%, #2e1065 100%)',
-            padding: '96px 24px', textAlign: 'center',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            {/* Decorative rings */}
-            <div aria-hidden="true" style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 700, height: 700, borderRadius: '50%',
-              border: '1px solid rgba(99,102,241,0.08)',
-              pointerEvents: 'none',
-            }} />
-            <div aria-hidden="true" style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 500, height: 500, borderRadius: '50%',
-              border: '1px solid rgba(99,102,241,0.12)',
-              pointerEvents: 'none',
-            }} />
-            <div aria-hidden="true" style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 300, height: 300, borderRadius: '50%',
-              border: '1px solid rgba(99,102,241,0.18)',
-              pointerEvents: 'none',
-            }} />
-
-            <div className="mx-auto max-w-3xl" style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '6px 18px', borderRadius: 50,
-                background: 'rgba(99,102,241,0.15)',
-                border: '1px solid rgba(99,102,241,0.3)',
-                fontSize: 13, color: '#a5b4fc', fontWeight: 700,
-                marginBottom: 28, letterSpacing: '0.3px',
-              }}>
-                🚀 Abhi shuru karo — bilkul free
-              </div>
-
-              <h2 style={{
-                fontSize: 'clamp(28px, 6vw, 58px)',
-                fontWeight: 900, letterSpacing: '-2px',
-                color: 'white', lineHeight: 1.05, marginBottom: 18,
-              }}>
-                Ek best quiz experience
-                <span className="shimmer-text" style={{ display: 'block', marginTop: 4 }}>sirf tumhare liye</span>
-              </h2>
-
-              <p style={{ fontSize: 16, color: '#94a3b8', marginBottom: 40, lineHeight: 1.75, maxWidth: 500, margin: '0 auto 40px' }}>
-                AI ke power se apne students ke liye perfect test banao. Koi account nahi chahiye — seedha shuru karo.
-              </p>
-
-              {/* Original links preserved */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <a href="/ai-test" className="btn-sweep" style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  color: 'white', padding: '17px 38px', borderRadius: 14,
-                  fontSize: 15, fontWeight: 800, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  boxShadow: '0 10px 36px rgba(99,102,241,0.5)',
-                }}>
-                  🎯 Make Quiz or Test
-                </a>
-                <a href="/dashboard" style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  color: 'white', padding: '17px 32px', borderRadius: 14,
-                  fontSize: 15, fontWeight: 700, textDecoration: 'none',
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  border: '1.5px solid rgba(255,255,255,0.18)',
-                  backdropFilter: 'blur(12px)',
-                  transition: 'background 0.2s',
-                }}>
-                  Dashboard →
-                </a>
-              </div>
-            </div>
-          </section>
-
-          {/* ──────────────────────────────────────────────────────────
-              NEW: FOOTER
-          ────────────────────────────────────────────────────────── */}
-          <footer style={{
-            background: '#07060f',
-            padding: '44px 24px 36px',
-            borderTop: '1px solid rgba(99,102,241,0.12)',
-          }}>
-            <div className="mx-auto max-w-5xl" style={{
-              display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', flexWrap: 'wrap', gap: 20,
-            }}>
-              {/* Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: 10,
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 15, fontWeight: 900, color: 'white',
-                }}>Q</div>
-                <span style={{ color: '#64748b', fontSize: 14 }}>
-                  QuizApp — <span style={{ color: '#4f46e5' }}>AI se banao, AI se seekho</span>
-                </span>
-              </div>
-
-              {/* Original nav links in footer */}
-              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                {[
-                  { href: '/about', label: 'How to Work' },
-                  { href: '/ai-test', label: 'AI Test' },
-                  { href: '/dashboard', label: 'Dashboard' },
-                ].map(l => (
-                  <a key={l.href} href={l.href} style={{
-                    color: '#475569', fontSize: 14, textDecoration: 'none', fontWeight: 500,
-                    transition: 'color 0.2s',
-                  }}>
-                    {l.label}
-                  </a>
-                ))}
-              </div>
-
-              <p style={{ color: '#1e1b4b', fontSize: 12, fontWeight: 600 }}>
-                © 2026 QuizApp. Made with ❤️ TEAMVB 
-              </p>
-            </div>
-          </footer>
-
-        </div>{/* end content layer */}
-      </div>{/* end root */}
-    </>
+          </div>
+          <div className="flex flex-wrap gap-6 text-sm text-slate-400">
+            <Link href="/exams" className="transition hover:text-indigo-300">Exams</Link>
+            <Link href="/ai-test" className="transition hover:text-indigo-300">AI Test</Link>
+            <Link href="/dashboard" className="transition hover:text-indigo-300">Dashboard</Link>
+            <Link href="/login" className="transition hover:text-indigo-300">Login</Link>
+          </div>
+          <p className="text-xs text-slate-600">© 2026 QuizApp · Made with ❤️ TEAMVB</p>
+        </div>
+      </footer>
+    </div>
   );
 }
