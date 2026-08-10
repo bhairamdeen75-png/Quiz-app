@@ -21,11 +21,17 @@ export default function TestPlayer({ testId }: { testId: string }) {
   const startedAtRef = useRef<string>('');
 
   useEffect(() => {
-    fetch(`/api/tests/${testId}/questions`).then((r) => r.json()).then((d) => {
+  fetch(`/api/tests/${testId}/questions`)
+    .then(async (r) => {
+      const d = await r.json();
+      if (r.status === 401 || d.needsLogin) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+        return;
+      }
       setTest(d);
       startedAtRef.current = d.startedAt;
     });
-  }, [testId]);
+}, [testId, router]);
 
   const submitAnswer = useCallback(async (questionId: string, optionIndex: number) => {
     if (!test) return;
