@@ -1,0 +1,27 @@
+{
+  "name": "JEE Main — Physics Test 1 (Kinematics)",
+  "description": "गति (Kinematics) पर आधारित हिंदी प्रश्न",
+  "subject": "Physics",
+  "duration_minutes": 10,
+  "difficulty": "easy",
+  "questions": [
+    {
+      "question": "एक कण एकसमान त्वरण से गति कर रहा है। इसका वेग 4 सेकंड में 5 m/s से 25 m/s हो जाता है। त्वरण है:",
+      "options": ["2.5 m/s²", "5 m/s²", "7.5 m/s²", "10 m/s²"],
+      "correctIndex": 1,
+      "chapter": "Kinematics",
+      "hint": "a = (v - u) / t",
+      "explanation": "a = (25 - 5) / 4 = 5 m/s²",
+      "difficulty": "easy"
+    },
+    {
+      "question": "निम्नलिखित में से कौन सी सदिश राशि है?",
+      "options": ["चाल (Speed)", "दूरी (Distance)", "वेग (Velocity)", "द्रव्यमान (Mass)"],
+      "correctIndex": 2,
+      "chapter": "Kinematics",
+      "hint": "सदिश में परिमाण और दिशा दोनों होते हैं",
+      "explanation": "वेग में परिमाण और दिशा दोनों होते हैं, इसलिए यह सदिश राशि है।",
+      "difficulty": "easy"
+    }
+  ]
+}
