@@ -24,7 +24,7 @@ export default function LoginPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-2xl font-extrabold text-white shadow-lg shadow-indigo-200">
           Q
         </div>
-        <h1 className="mt-4 text-center text-2xl font-bold text-gray-900">QuizGen me Welcome 👋</h1>
+        <h1 className="mt-4 text-center text-2xl font-bold text-gray-900">Quiz-app me Welcome 👋</h1>
         <p className="mt-1 text-center text-sm text-gray-500">
           Login karo aur apni test series, progress aur weak topics track karo
         </p>
