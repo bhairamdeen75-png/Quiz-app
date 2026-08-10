@@ -16,7 +16,7 @@ export default async function Home() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">Q</div>
-          <span className="text-lg font-bold text-gray-900">QuizGen</span>
+          <span className="text-lg font-bold text-gray-900">Quiz-app</span>
         </div>
         <a href="/dashboard" className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700">
           Dashboard
@@ -38,10 +38,10 @@ export default async function Home() {
         <div className="mt-8 flex justify-center gap-3">
           {/* ✅ /create (404) → /ai-test (existing page) */}
           <a href="/ai-test" className="rounded-xl bg-indigo-600 px-7 py-3.5 font-semibold text-white shadow-xl shadow-indigo-200 transition hover:scale-[1.02] hover:bg-indigo-700">
-            Quiz Banao — Free
+            Make Quiz or Test
           </a>
           <a href="/about" className="rounded-xl border border-gray-300 bg-white px-7 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-50">
-            Kaise kaam karta hai
+            How to Work 
           </a>
         </div>
       </header>
