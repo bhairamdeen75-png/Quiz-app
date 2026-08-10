@@ -2,10 +2,8 @@ name: Import Test Series
 
 on:
   push:
-    paths:
-      - 'data/**'
-      - 'scripts/import-tests.mjs'
-  workflow_dispatch:      # Actions tab se manually bhi chala sakte ho
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   import:
