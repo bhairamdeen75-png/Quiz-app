@@ -55,9 +55,11 @@ function AITestForm() {
       body: JSON.stringify({ examId, subjectId, chapterIds, count, difficulty }),
     });
     const data = await res.json();
-    if (data.testId) router.push(`/test/${data.testId}`);
-    else alert(data.error ?? 'Generation failed');
-    setLoading(false);
+if (data.testId) router.push(`/test/${data.testId}`);
+else if (res.status === 401 || data.needsLogin) {
+  router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+} else alert(data.error ?? 'Generation failed');
+ setLoading(false);
   }
 
   return (
