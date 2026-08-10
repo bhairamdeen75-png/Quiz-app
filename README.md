@@ -26,5 +26,5 @@ Next.js 14 · Supabase (PostgreSQL) · Pollinations AI · Tailwind CSS · NextAu
 3. Environment variables dalo 
 4. Deploy — done! 🚀
 
-#deployer and programmer 
-1. made with ❤️ TEAMVB 
+# deployer and programmer 
+ made with ❤️ TEAMVB 
