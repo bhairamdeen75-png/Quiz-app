@@ -1,0 +1,22 @@
+name: Import Test Series
+
+on:
+  push:
+    paths:
+      - 'data/**'
+      - 'scripts/import-tests.mjs'
+  workflow_dispatch:      # Actions tab se manually bhi chala sakte ho
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i --no-save @supabase/supabase-js
+      - run: node scripts/import-tests.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
