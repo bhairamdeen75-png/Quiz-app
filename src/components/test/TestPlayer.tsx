@@ -35,7 +35,7 @@ export default function TestPlayer({ testId }: { testId: string }) {
       body: JSON.stringify({ questionId, userAnswer: optionIndex }),
     });
     const data = await res.json();
-    if (res.ok && test.answerMode === 'instant') setFeedback(data);
+    if (res.ok) setFeedback(data);
     setAnsweredFlags((prev) => ({ ...prev, [current]: true }));
   }, [test, testId, current]);
 
@@ -82,9 +82,9 @@ export default function TestPlayer({ testId }: { testId: string }) {
           </div>
         </div>
 
-        {feedback && test.answerMode === 'instant' && (
-          <FeedbackPanel {...feedback} options={q.options} />
-        )}
+        {feedback && (
+    <FeedbackPanel {...feedback} options={q.options} />
+  )}
 
         <div className="flex justify-between">
           <button onClick={() => setCurrent((c) => Math.max(0, c - 1))} disabled={current === 0}
