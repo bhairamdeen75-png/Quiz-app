@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
 // POST: series start karo → test banao
 export async function POST(req: NextRequest) {
   const user = await requireUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+  if (!user) {
+  return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
+}
   const { seriesId } = await req.json();
   const supabase = createClient();
 
