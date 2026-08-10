@@ -2,7 +2,12 @@
 /**
  * data/<exam-slug>/<testN>.json → Supabase me import
  * ZERO-DEPENDENCY version — sirf Node 18+ ka built-in fetch
- * Koi npm install nahi chahiye. Idempotent: bar-bar chalao, duplicate nahi banega.
+ *
+ * ✅ DONO FORMATS SUPPORT:
+ *    Format 1 (single object): { "name": "...", "subject": "...", "questions": [...] }
+ *    Format 2 (array):         [ { "name": "...", ... }, { "name": "...", ... } ]
+ *
+ * Idempotent: bar-bar chalao, duplicate kabhi nahi banega.
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -99,115 +104,133 @@ async function main() {
     console.log(`\n📂 Exam: ${slug} (${files.length} file)`);
 
     for (const file of files) {
-      const raw = JSON.parse(readFileSync(join(DATA_DIR, slug, file), 'utf8'));
-      console.log(`  📄 ${file}: ${raw.name}`);
-
-      // 1) EXAM — slug se dhoondo (jee-main DB me hai → usi ID pe jayega), nahi mila to create
-      let exam = examsBySlug.get(slug);
-      if (!exam) {
-        exam = {
-          id: detId('exam', slug),
-          slug,
-          name: raw.examName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          description: raw.examDescription ?? null,
-          icon: raw.examIcon ?? '📝',
-        };
-        await upsert('exams', exam, 'id');
-        examsBySlug.set(slug, exam);
-        stats.exams++;
+      // JSON parse — error ho to file skip karke aage badho
+      let parsed;
+      try {
+        parsed = JSON.parse(readFileSync(join(DATA_DIR, slug, file), 'utf8'));
+      } catch (e) {
+        console.error(`    ❌ "${file}" me JSON parse error: ${e.message}`);
+        continue;
       }
 
-      // 2) SUBJECT
-      const subjectName = (raw.subject ?? '').trim();
-      if (!subjectName) { console.error(`    ❌ "${file}" me "subject" field missing`); continue; }
-      let subject = subjectsByKey.get(`${exam.id}:${subjectName}`);
-      if (!subject) {
-        subject = { id: detId('subject', exam.id, subjectName), exam_id: exam.id, name: subjectName, order_no: 0 };
-        await upsert('subjects', subject, 'id');
-        subjectsByKey.set(`${exam.id}:${subjectName}`, subject);
-        stats.subjects++;
-      }
+      // ✅ ARRAY FORMAT BHI SUPPORT — ek file me ek se zyada tests
+      const tests = Array.isArray(parsed) ? parsed : [parsed];
+      console.log(`  📄 ${file}: ${tests.length} test(s)`);
 
-      // 3) CHAPTERS + QUESTIONS
-      const rows = [];
-      for (const q of raw.questions ?? []) {
-        if (!Array.isArray(q.options) || q.options.length < 2) {
-          console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+      for (const raw of tests) {
+        if (!raw || typeof raw !== 'object' || !raw.name) {
+          console.error(`    ⚠️ Ek test object me "name" missing hai — skip`);
+          continue;
         }
-        if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
-          console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+        console.log(`    ▶ ${raw.name}`);
+
+        // 1) EXAM — slug se dhoondo, nahi mila to create
+        let exam = examsBySlug.get(slug);
+        if (!exam) {
+          exam = {
+            id: detId('exam', slug),
+            slug,
+            name: raw.examName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+            description: raw.examDescription ?? null,
+            icon: raw.examIcon ?? '📝',
+          };
+          await upsert('exams', exam, 'id');
+          examsBySlug.set(slug, exam);
+          stats.exams++;
         }
-        const chapterName = (q.chapter ?? '').trim();
-        let chapterId = null;
-        if (chapterName) {
-          let chapter = chaptersByKey.get(`${subject.id}:${chapterName}`);
-          if (!chapter) {
-            chapter = { id: detId('chapter', subject.id, chapterName), subject_id: subject.id, name: chapterName, order_no: 0 };
-            await upsert('chapters', chapter, 'id');
-            chaptersByKey.set(`${subject.id}:${chapterName}`, chapter);
-            stats.chapters++;
+
+        // 2) SUBJECT
+        const subjectName = (raw.subject ?? '').trim();
+        if (!subjectName) { console.error(`    ❌ "${raw.name}" me "subject" field missing — skip`); continue; }
+        let subject = subjectsByKey.get(`${exam.id}:${subjectName}`);
+        if (!subject) {
+          subject = { id: detId('subject', exam.id, subjectName), exam_id: exam.id, name: subjectName, order_no: 0 };
+          await upsert('subjects', subject, 'id');
+          subjectsByKey.set(`${exam.id}:${subjectName}`, subject);
+          stats.subjects++;
+        }
+
+        // 3) CHAPTERS + QUESTIONS
+        const rows = [];
+        for (const q of raw.questions ?? []) {
+          if (!Array.isArray(q.options) || q.options.length < 2) {
+            console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
           }
-          chapterId = chapter.id;
-        }
-        rows.push({
-          id: detId('question', exam.id, q.question),
-          exam_id: exam.id,
-          subject_id: subject.id,
-          chapter_id: chapterId,
-          question_text: q.question,
-          options: q.options,
-          correct_index: q.correctIndex,
-          hint: q.hint ?? null,
-          explanation: q.explanation ?? null,
-          difficulty: DIFFS.includes(q.difficulty) ? q.difficulty : DIFFS.includes(raw.difficulty) ? raw.difficulty : 'medium',
-          source: 'preloaded',
-          is_approved: true,
-        });
-      }
-
-      for (const row of rows) {
-        const existing = questionsByKey.get(`${exam.id}:${row.question_text}`);
-        if (existing) {
-          await patch('questions', existing.id, {
-            options: row.options, correct_index: row.correct_index,
-            hint: row.hint, explanation: row.explanation,
-            difficulty: row.difficulty, chapter_id: row.chapter_id,
+          if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+            console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+          }
+          const chapterName = (q.chapter ?? '').trim();
+          let chapterId = null;
+          if (chapterName) {
+            let chapter = chaptersByKey.get(`${subject.id}:${chapterName}`);
+            if (!chapter) {
+              chapter = { id: detId('chapter', subject.id, chapterName), subject_id: subject.id, name: chapterName, order_no: 0 };
+              await upsert('chapters', chapter, 'id');
+              chaptersByKey.set(`${subject.id}:${chapterName}`, chapter);
+              stats.chapters++;
+            }
+            chapterId = chapter.id;
+          }
+          rows.push({
+            id: detId('question', exam.id, q.question),
+            exam_id: exam.id,
+            subject_id: subject.id,
+            chapter_id: chapterId,
+            question_text: q.question,
+            options: q.options,
+            correct_index: q.correctIndex,
+            hint: q.hint ?? null,
+            explanation: q.explanation ?? null,
+            difficulty: DIFFS.includes(q.difficulty) ? q.difficulty : DIFFS.includes(raw.difficulty) ? raw.difficulty : 'medium',
+            source: 'preloaded',
+            is_approved: true,
           });
-        } else {
-          await upsert('questions', row, 'id');
-          questionsByKey.set(`${exam.id}:${row.question_text}`, row);
         }
-        stats.questions++;
-      }
 
-      // 4) TEST SERIES
-      const seriesKey = `${exam.id}:${raw.name}`;
-      const seriesData = {
-        subject_id: subject.id,
-        description: raw.description ?? null,
-        question_count: rows.length,
-        duration_minutes: raw.duration_minutes ?? Math.ceil(rows.length * 1.5),
-        difficulty: DIFFS.includes(raw.difficulty) ? raw.difficulty : 'medium',
-      };
-      let series = seriesByKey.get(seriesKey);
-      if (series) {
-        await patch('test_series', series.id, seriesData);
-        stats.series++;
-      } else {
-        series = { id: detId('series', exam.id, raw.name), exam_id: exam.id, name: raw.name, ...seriesData };
-        await upsert('test_series', series, 'id');
-        seriesByKey.set(seriesKey, series);
-        stats.series++;
-      }
+        for (const row of rows) {
+          const existing = questionsByKey.get(`${exam.id}:${row.question_text}`);
+          if (existing) {
+            await patch('questions', existing.id, {
+              options: row.options, correct_index: row.correct_index,
+              hint: row.hint, explanation: row.explanation,
+              difficulty: row.difficulty, chapter_id: row.chapter_id,
+            });
+          } else {
+            await upsert('questions', row, 'id');
+            questionsByKey.set(`${exam.id}:${row.question_text}`, row);
+          }
+          stats.questions++;
+        }
 
-      // 5) SERIES ↔ QUESTIONS MAPPING (composite PK pe upsert — duplicate key error kabhi nahi)
-      const finalMappings = rows.map((r) => {
-        const existing = questionsByKey.get(`${exam.id}:${r.question_text}`);
-        return { test_series_id: series.id, question_id: existing ? existing.id : r.id };
-      });
-      if (finalMappings.length) {
-        await upsert('test_series_questions', finalMappings, 'test_series_id,question_id');
-        stats.mappings += finalMappings.length;
+        // 4) TEST SERIES
+        const seriesKey = `${exam.id}:${raw.name}`;
+        const seriesData = {
+          subject_id: subject.id,
+          description: raw.description ?? null,
+          question_count: rows.length,
+          duration_minutes: raw.duration_minutes ?? Math.ceil(rows.length * 1.5),
+          difficulty: DIFFS.includes(raw.difficulty) ? raw.difficulty : 'medium',
+        };
+        let series = seriesByKey.get(seriesKey);
+        if (series) {
+          await patch('test_series', series.id, seriesData);
+          stats.series++;
+        } else {
+          series = { id: detId('series', exam.id, raw.name), exam_id: exam.id, name: raw.name, ...seriesData };
+          await upsert('test_series', series, 'id');
+          seriesByKey.set(seriesKey, series);
+          stats.series++;
+        }
+
+        // 5) SERIES ↔ QUESTIONS MAPPING (composite PK pe upsert)
+        const finalMappings = rows.map((r) => {
+          const existing = questionsByKey.get(`${exam.id}:${r.question_text}`);
+          return { test_series_id: series.id, question_id: existing ? existing.id : r.id };
+        });
+        if (finalMappings.length) {
+          await upsert('test_series_questions', finalMappings, 'test_series_id,question_id');
+          stats.mappings += finalMappings.length;
+        }
       }
     }
   }
