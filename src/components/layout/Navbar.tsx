@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
@@ -11,7 +12,13 @@ export default function Navbar() {
     <header className="sticky top-0 z-10 border-b border-brand/8 bg-paper/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between py-3 pl-14 pr-4 lg:pl-4">
         <Link href="/" className="flex items-center gap-2 font-display text-lg font-bold text-brand">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm text-gold">📚</span>
+          <Image
+            src="/icon.jpg"
+            alt="Quiz App Logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg object-cover"
+          />
           Quiz App
         </Link>
         <div className="flex items-center gap-5 text-sm font-medium">
