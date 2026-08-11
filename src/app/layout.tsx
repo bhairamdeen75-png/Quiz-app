@@ -9,6 +9,11 @@ import Providers from '@/components/providers/Providers';
 export const metadata: Metadata = {
   title: 'Quiz app — Free Test Series for Every Student',
   description: 'JEE, NEET, SSC, UPSC aur bahut se exams ki free AI test series aur quizzes.',
+  icons: {
+    icon: '/icon.jpg',
+    shortcut: '/icon.jpg',
+    apple: '/icon.jpg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
