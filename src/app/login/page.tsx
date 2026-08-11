@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 
@@ -22,7 +23,13 @@ export default function LoginPage() {
       <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-indigo-100">
         {/* Logo */}
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-2xl font-extrabold text-white shadow-lg shadow-indigo-200">
-          Q
+          <Image
+            src="/icon.jpg"
+            alt="Quiz App Logo"
+            width={56}
+            height={56}
+            className="mx-auto h-14 w-14 rounded-2xl object-cover shadow-lg"
+          />
         </div>
         <h1 className="mt-4 text-center text-2xl font-bold text-gray-900">Quiz-app me Welcome 👋</h1>
         <p className="mt-1 text-center text-sm text-gray-500">
