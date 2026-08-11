@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -100,13 +101,19 @@ function SidebarContent({
     <>
       <div className="mb-6 flex items-center justify-between">
         <Link
-          href="/"
-          onClick={onNavigate}
-          className="flex items-center gap-2 font-display text-lg font-bold text-brand"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm text-gold">📚</span>
-          Quiz App
-        </Link>
+  href="/"
+  onClick={onNavigate}
+  className="flex items-center gap-2 font-display text-lg font-bold text-brand"
+>
+  <Image
+    src="/icon.jpg"
+    alt="Quiz App Logo"
+    width={32}
+    height={32}
+    className="h-8 w-8 rounded-lg object-cover"
+  />
+  Quiz App
+</Link>
         <button
           onClick={onNavigate}
           aria-label="Close sidebar"
