@@ -24,7 +24,16 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link href="/login" className="btn-primary !px-4 !py-2 text-sm">Login</Link>
+            <>
+              <Link
+                href="/admin-login"
+                title="Admin Login"
+                className="text-lg text-brand/60 transition hover:scale-110 hover:text-brand"
+              >
+                ⭐
+              </Link>
+              <Link href="/login" className="btn-primary !px-4 !py-2 text-sm">Login</Link>
+            </>
           )}
         </div>
       </nav>
