@@ -5,10 +5,30 @@ import CountdownTimer from './CountdownTimer';
 import QuestionPalette from './QuestionPalette';
 import FeedbackPanel from './FeedbackPanel';
 
+interface Question {
+  id: string;
+  question_text: string;
+  options: string[];
+  difficulty: string;
+  correctIndex: number;      // ⚡ preloaded — instant match ke liye
+  hint: string | null;
+  explanation: string | null;
+}
+
 interface TestData {
-  testId: string; title: string; answerMode: 'instant' | 'final';
-  durationSeconds: number; startedAt: string;
-  questions: { id: string; question_text: string; options: string[]; difficulty: string }[];
+  testId: string;
+  title: string;
+  answerMode: 'instant' | 'final';
+  durationSeconds: number;
+  startedAt: string;
+  questions: Question[];
+}
+
+interface Feedback {
+  correct: boolean;
+  correctIndex: number;
+  hint: string | null;
+  explanation: string | null;
 }
 
 export default function TestPlayer({ testId }: { testId: string }) {
@@ -17,38 +37,62 @@ export default function TestPlayer({ testId }: { testId: string }) {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [answeredFlags, setAnsweredFlags] = useState<Record<number, boolean>>({});
-  const [feedback, setFeedback] = useState<any>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const startedAtRef = useRef<string>('');
 
   useEffect(() => {
-  fetch(`/api/tests/${testId}/questions`)
-    .then(async (r) => {
-      const d = await r.json();
-      if (r.status === 401 || d.needsLogin) {
-        router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-        return;
-      }
-      setTest(d);
-      startedAtRef.current = d.startedAt;
-    });
-}, [testId, router]);
+    fetch(`/api/tests/${testId}/questions`)
+      .then(async (r) => {
+        const d = await r.json();
+        if (r.status === 401 || d.needsLogin) {
+          router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+          return;
+        }
+        setTest(d);
+        startedAtRef.current = d.startedAt;
+      })
+      .catch(() => setTest(null));
+  }, [testId, router]);
 
-  const submitAnswer = useCallback(async (questionId: string, optionIndex: number) => {
-    if (!test) return;
-    const res = await fetch(`/api/tests/${testId}/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId, userAnswer: optionIndex }),
-    });
-    const data = await res.json();
-    if (res.ok) setFeedback(data);
-    setAnsweredFlags((prev) => ({ ...prev, [current]: true }));
-  }, [test, testId, current]);
+  // ⚡ Answer check AB LOCAL HAI — 0ms, koi network call nahi
+  const submitAnswer = useCallback(
+    async (questionId: string, optionIndex: number) => {
+      if (!test) return;
+      const q = test.questions.find((qq) => qq.id === questionId);
+      if (!q) return;
+
+      // 1) Turant local match — sahi/galat + hint + explanation 0ms me
+      const isCorrect = optionIndex === q.correctIndex;
+      setFeedback({
+        correct: isCorrect,
+        correctIndex: q.correctIndex,
+        hint: q.hint,
+        explanation: q.explanation,
+      });
+      setAnsweredFlags((prev) => ({ ...prev, [current]: true }));
+
+      // 2) Background me DB sync (fire-and-forget — UI block nahi hota)
+      try {
+        await fetch(`/api/tests/${testId}/answer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId, userAnswer: optionIndex }),
+        });
+      } catch {
+        // Network fail ho jaye to submit pe answers phir bhi sync ho jayenge (File 3)
+      }
+    },
+    [test, testId, current]
+  );
 
   const finalSubmit = useCallback(async () => {
-    await fetch(`/api/tests/${testId}/submit`, { method: 'POST' });
+    await fetch(`/api/tests/${testId}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),   // ⚡ Backup sync — koi answer miss na ho
+    });
     router.push(`/test/${testId}/result`);
-  }, [testId, router]);
+  }, [testId, router, answers]);
 
   if (!test) return <p className="p-8 text-center text-slate-500">Test load ho raha hai...</p>;
 
@@ -88,9 +132,7 @@ export default function TestPlayer({ testId }: { testId: string }) {
           </div>
         </div>
 
-        {feedback && (
-    <FeedbackPanel {...feedback} options={q.options} />
-  )}
+        {feedback && <FeedbackPanel {...feedback} options={q.options} />}
 
         <div className="flex justify-between">
           <button onClick={() => setCurrent((c) => Math.max(0, c - 1))} disabled={current === 0}
