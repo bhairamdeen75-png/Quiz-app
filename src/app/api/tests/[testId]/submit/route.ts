@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/server';
 import { computeScore } from '@/lib/utils/scoring';
 import { getDeadlineMs } from '@/lib/utils/timer';
 
-export async function POST(_req: Request, { params }: { params: { testId: string } }) {
+export async function POST(req: Request, { params }: { params: { testId: string } }) {
   const user = await requireUser();
   if (!user) {
-  return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
-}
+    return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
+  }
   const supabase = createClient();
   const { data: test } = await supabase
     .from('tests').select('*').eq('id', params.testId).eq('user_id', user.id).single();
@@ -17,29 +17,48 @@ export async function POST(_req: Request, { params }: { params: { testId: string
 
   // Already submitted → result wapas
   if (test.status === 'completed') {
-  return NextResponse.json({
-    testId: test.id,
-    result: {
-      score: test.score,
-      maxScore: test.max_score,
-      correct: test.correct_count,
-      wrong: test.wrong_count,
-      skipped: test.skipped_count,
-      accuracy: test.accuracy,
-    },
-  });
-}
-  
-  // Deadline cross ho chuka hai → expired
+    return NextResponse.json({
+      testId: test.id,
+      result: {
+        score: test.score,
+        maxScore: test.max_score,
+        correct: test.correct_count,
+        wrong: test.wrong_count,
+        skipped: test.skipped_count,
+        accuracy: test.accuracy,
+      },
+    });
+  }
+
   const now = Date.now();
   const deadline = getDeadlineMs(test.started_at, test.duration_seconds);
   const isExpired = now > deadline;
 
-  const [{ data: questions }, { data: answers }, { data: rule }] = await Promise.all([
+  const [{ data: questions }, { data: rule }] = await Promise.all([
     supabase.from('questions').select('*').in('id', test.question_ids),
-    supabase.from('test_answers').select('*').eq('test_id', test.id),
     supabase.from('exam_rules').select('*').eq('exam_id', test.exam_id).maybeSingle(),
   ]);
+
+  // ⚡ Client ke local answers sync karo (agar koi background POST miss hua ho)
+  const body = await req.json().catch(() => ({}));
+  const clientAnswers = body.answers as Record<string, number> | undefined;
+  if (clientAnswers && typeof clientAnswers === 'object' && questions) {
+    const questionById = new Map(questions.map((qq) => [qq.id, qq]));
+    const rows = Object.entries(clientAnswers)
+      .filter(([questionId]) => questionById.has(questionId))
+      .map(([questionId, userAnswer]) => ({
+        test_id: test.id,
+        question_id: questionId,
+        user_answer: userAnswer as number,
+        is_correct: (userAnswer as number) === questionById.get(questionId)!.correct_index,
+      }));
+    if (rows.length > 0) {
+      await supabase.from('test_answers').upsert(rows, { onConflict: 'test_id,question_id' });
+    }
+  }
+
+  const { data: answers } = await supabase
+    .from('test_answers').select('*').eq('test_id', test.id);
 
   const correctMarks = Number(rule?.correct_marks ?? 4);
   const negativeMarks = Number(rule?.negative_marks ?? 1);
