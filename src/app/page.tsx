@@ -552,9 +552,10 @@ export default async function Home() {
               </Link>
               <Link
                 href="/contact"
-                className="rounded-xl border border-gray-300 bg-white px-8 py-3.5 font-display font-semibold text-slate-700 transition hover:bg-gray-50"
+                className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-8 py-3.5 font-display font-semibold text-slate-700 transition hover:bg-gray-50"
               >
-                <TelegramIcon className="h-8 w-8" /> Telegram connect 
+               <TelegramIcon className="h-8 w-8" />
+                Telegram connect
               </Link>
             </div>
           </div>
