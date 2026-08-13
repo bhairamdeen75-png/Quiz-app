@@ -10,8 +10,7 @@ export const maxDuration = 60;
 // GET: status poll karo
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+  if (!user) return NextResponse.json({ error: 'Unauthorized', needsLogin: true }, { status: 401 });
   const supabase = createClient();
   const { data } = await supabase
     .from('pdf_uploads').select('*').eq('id', params.id).eq('user_id', user.id).single();
@@ -22,7 +21,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 // POST: process karo (parse → AI extract → test banao)
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+if (!user) return NextResponse.json({ error: 'Unauthorized', needsLogin: true }, { status: 401 });
 
   const supabase = createClient();
   const { data: upload } = await supabase
