@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LOGIN_REQUIRED_MESSAGE, TELEGRAM_URL } from '@/lib/messages';
+import { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
+import { TelegramIcon } from '@/components/ui/icons';
 
 export default function PdfUploadPage() {
   const router = useRouter();
@@ -9,7 +10,7 @@ export default function PdfUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadId, setUploadId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(false);   // 🔐 Naya state
+  const [showLogin, setShowLogin] = useState(false);
 
   async function handleUpload() {
     if (!file) return;
@@ -20,7 +21,6 @@ export default function PdfUploadPage() {
     const res = await fetch('/api/pdf/upload', { method: 'POST', body: form });
     const data = await res.json();
 
-    // 🔐 Login nahi hai → wahi mast modal dikhao (exams wala style)
     if (res.status === 401 || data.needsLogin) {
       setUploading(false);
       setShowLogin(true);
@@ -41,7 +41,6 @@ export default function PdfUploadPage() {
     const res = await fetch(`/api/pdf/uploads/${id}`, { method: 'POST' });
     const data = await res.json();
 
-    // 🔐 Processing ke time session expire ho gaya → modal
     if (res.status === 401 || data.needsLogin) {
       setUploading(false);
       setShowLogin(true);
@@ -79,7 +78,6 @@ export default function PdfUploadPage() {
         )}
       </div>
 
-      {/* 🔐 Login modal — exams page jaisa, bilkul wahi style */}
       {showLogin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
@@ -90,9 +88,9 @@ export default function PdfUploadPage() {
             <div className="p-6">
               <p className="text-sm leading-relaxed text-slate-600">{LOGIN_REQUIRED_MESSAGE}</p>
 
-              <a href={TELEGRAM_URL} target="_blank" rel="noreferrer"
+              <a href="/api/contact/telegram" target="_blank" rel="noreferrer"
                 className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
-                📨 टेलीग्राम पर मैसेज करें
+                <TelegramIcon className="h-4 w-4" /> टेलीग्राम पर मैसेज करें
               </a>
 
               <div className="mt-4 flex gap-3">
