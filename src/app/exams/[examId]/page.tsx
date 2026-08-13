@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';      // ← NAYI line
-import { LOGIN_REQUIRED_MESSAGE, TELEGRAM_URL } from '@/lib/messages';  // ← NAYI line
+import { useRouter } from 'next/navigation';      // ← NAYI lineimport { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
+import { TelegramIcon } from '@/components/ui/icons';
 
 interface ExamDetail { exam: any; subjects: any[]; rule: any; }
 interface Series { id: string; name: string; question_count: number; duration_minutes: number; difficulty: string; }
