@@ -1,3 +1,4 @@
+import { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth-helpers';
 import { createClient } from '@/lib/supabase/server';
