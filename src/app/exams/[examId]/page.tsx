@@ -126,9 +126,9 @@ function StartSeriesCard({ series }: { series: Series }) {
           <div className="p-6">
             <p className="text-sm leading-relaxed text-slate-600">{LOGIN_REQUIRED_MESSAGE}</p>
 
-            <a href={TELEGRAM_URL} target="_blank" rel="noreferrer"
+            <a href="/api/contact/telegram" target="_blank" rel="noreferrer"
               className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100">
-              📨 टेलीग्राम पर मैसेज करें
+              <TelegramIcon className="h-4 w-4" /> टेलीग्राम पर मैसेज करें
             </a>
 
             <div className="mt-4 flex gap-3">
