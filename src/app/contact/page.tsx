@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { TelegramIcon, EmailIcon } from '@/components/ui/icons';
+import ContactForm from '@/components/contact/ContactForm';
 
 export const metadata: Metadata = {
   title: 'Contact & Support — Quiz App',
   description:
-    'Quiz App ke baare me janiye, apna feedback dijiye aur support ke liye humein Telegram par message karo.',
+    'Quiz App ke baare me janiye, apna feedback dijiye aur support ke liye humein message karo.',
 };
 
-const TELEGRAM_URL = 'https://t.me/bkstudyzone';
-const TELEGRAM_USERNAME = '@bkstudyzone';
-const SUPPORT_EMAIL = 'bhairamdeen75@gmail.com';
+// 🔐 Sab kuch backend se — env variables (Vercel me set karo).
+// Email ID aur Telegram link ab frontend source me kahin nahi hain.
+const TELEGRAM_USERNAME = process.env.TELEGRAM_USERNAME ?? '@bkstudyzone';
 
 const features = [
   {
@@ -47,11 +49,11 @@ const features = [
 const faqs = [
   {
     q: 'Quiz App kya hai?',
-    a: 'Quiz App ek free test series platform hai jahan aap AI tests de sakte ho, PDF upload karke quiz bana sakte ho, aur JEE, NEET, SSC, UPSC jaise 10+ exams ki preloaded series practice kar sakte ho.',
+    a: 'Quiz App ek free test series aur quiz platform hai — JEE, NEET, SSC, UPSC aur 10+ exams ke liye. AI tests, PDF se quiz, aur preloaded series — sab kuch ek jagah, bilkul free.',
   },
   {
     q: 'Kya ye app sach me free hai?',
-    a: 'Haan, bilkul free. Hum chahte hain ki har student ko achhi practice material mile, isliye koi charge nahi hai.',
+    a: 'Haan, 100% free. Koi payment nahi, koi hidden charge nahi. Hum chahte hain ki har student ko achhi practice material mile.',
   },
   {
     q: 'Test dene ke liye kya karna hoga?',
@@ -62,39 +64,37 @@ const faqs = [
     a: 'Sidebar me Upload par click karo, apni PDF file select karo, aur AI uske questions bana dega. PDF jitna clear hoga, questions utne achhe banenge.',
   },
   {
-    q: 'Support se kaise baat karu?',
-    a: 'Sabse fast tarika hai Telegram — niche diye button par click karo ya TELEGRAM_USERNAME par message karo. Hum jaldi reply karte hain.',
+    q: 'Kya main mobile par use kar sakta hu?',
+    a: 'Bilkul. Website mobile, tablet aur laptop — har device par perfectly responsive hai. Mobile par sidebar hamburger menu se khulta hai.',
   },
   {
-    q: 'Apna feedback ya suggestion kaise bheju?',
-    a: 'Feedback hamesha welcome hai! Telegram par message karo ya email karo. Aapke suggestion se app aur behtar banti hai.',
+    q: 'Support se kaise baat karu?',
+    a: 'Contact page par niche diye Telegram group button se judein ya email form se message bhejein. Hamari team jaldi reply karti hai.',
   },
 ];
 
 export default function ContactPage() {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl px-4 py-10">
       {/* ============ HERO ============ */}
       <section className="text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand">
-          📚 Quiz App — Free Test Series for Every Student
-        </span>
-        <h1 className="mt-4 font-display text-4xl font-bold text-brand sm:text-5xl">
-          Contact &amp; Support
+        <span className="badge">💬 Support & Feedback</span>
+        <h1 className="mt-3 font-display text-4xl font-bold text-slate-900 sm:text-5xl">
+          Humse Judein
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-          Koi bhi problem ho, feedback dena ho ya bas baat karni ho — hum yahin hain.
-          Team VB har student ki madad ke liye ready hai. Jaldi se humein message karo! 🚀
+        <p className="mx-auto mt-3 max-w-2xl text-slate-600">
+          Koi sawaal, feedback ya technical problem — hum yahan hain aapki madad ke liye.
+          Telegram group me judein ya neeche form se message bhejein.
         </p>
       </section>
 
       {/* ============ CONTACT CARDS ============ */}
-      <section className="mt-12 grid gap-6 sm:grid-cols-2">
+      <section className="mt-12 grid gap-6 md:grid-cols-2">
         {/* Telegram card */}
         <div className="flex flex-col rounded-2xl border border-brand/10 bg-white p-6 shadow-sm transition hover:shadow-md">
           <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-2xl text-gold">
-              ✈️
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500 text-white">
+              <TelegramIcon className="h-7 w-7" />
             </span>
             <div>
               <h2 className="font-display text-lg font-bold text-slate-900">Telegram Support</h2>
@@ -105,22 +105,23 @@ export default function ContactPage() {
             Questions, doubts, feedback ya koi technical problem — Telegram par message karo.
             Hamari team daily active rehti hai.
           </p>
+          {/* 🔐 Link frontend me nahi — server redirect karta hai */}
           <a
-            href={TELEGRAM_URL}
+            href="/api/contact/telegram"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary mt-5 inline-flex items-center justify-center gap-2 !px-5 !py-3 text-sm"
           >
-            ✈️ {TELEGRAM_USERNAME} par message karo
+            <TelegramIcon className="h-5 w-5" /> Telegram Group Join Karo
           </a>
-          <p className="mt-3 text-center text-xs text-slate-400">{TELEGRAM_URL}</p>
+          <p className="mt-3 text-center text-xs text-slate-400">{TELEGRAM_USERNAME}</p>
         </div>
 
-        {/* Email card */}
+        {/* Email card — form, koi address nahi dikhta */}
         <div className="flex flex-col rounded-2xl border border-brand/10 bg-white p-6 shadow-sm transition hover:shadow-md">
           <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-2xl">
-              📧
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-white">
+              <EmailIcon className="h-6 w-6" />
             </span>
             <div>
               <h2 className="font-display text-lg font-bold text-slate-900">Email Support</h2>
@@ -128,16 +129,10 @@ export default function ContactPage() {
             </div>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-slate-600">
-            Lambi detail wali baat, bug report ya business enquiry ho — email par bhejo.
-            Hum 24-48 ghante me reply karte hain.
+            Lambi detail wali baat, bug report ya business enquiry ho — neeche form bharo,
+            message seedha hamari team ko jayega. Hum 24-48 ghante me reply karte hain.
           </p>
-          <a
-            href={'mailto:' + SUPPORT_EMAIL}
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg border border-brand/20 bg-brand/5 px-5 py-3 text-sm font-semibold text-brand transition hover:bg-brand/10"
-          >
-            📧 {SUPPORT_EMAIL}
-          </a>
-          <p className="mt-3 text-center text-xs text-slate-400">Support hours: Mon–Sat, 9 AM – 9 PM IST</p>
+          <ContactForm />
         </div>
       </section>
 
@@ -206,16 +201,16 @@ export default function ContactPage() {
           Koi aur sawaal hai? 💬
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-gold/80">
-          Telegram par ek message bhejo — hamari team aapko turant madad karegi.
+          Telegram group me ek message bhejo — hamari team aapko turant madad karegi.
           Padhai jari rakho, hum support ke liye hain!
         </p>
         <a
-          href={TELEGRAM_URL}
+          href="/api/contact/telegram"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-8 py-3 text-sm font-bold text-brand shadow-md transition hover:bg-slate-100"
         >
-          ✈️ Telegram Join Karo — {TELEGRAM_USERNAME}
+          <TelegramIcon className="h-5 w-5" /> Telegram Join Karo — {TELEGRAM_USERNAME}
         </a>
       </section>
     </div>
