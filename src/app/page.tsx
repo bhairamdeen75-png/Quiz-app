@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TelegramIcon } from '@/components/ui/icons';
 import { createClient } from "@/lib/supabase/server";
 import type { Exam } from "@/types";
 
