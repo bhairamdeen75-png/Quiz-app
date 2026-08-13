@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request, { params }: { params: { testId: string } }) {
   const user = await requireUser();
   if (!user) {
-  return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
-}
+    return NextResponse.json({ error: LOGIN_REQUIRED_MESSAGE, needsLogin: true }, { status: 401 });
+  }
 
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
