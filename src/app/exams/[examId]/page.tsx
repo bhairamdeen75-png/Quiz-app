@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';      // ← NAYI lineimport { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
+import { useRouter } from 'next/navigation';
+import { LOGIN_REQUIRED_MESSAGE } from '@/lib/messages';
 import { TelegramIcon } from '@/components/ui/icons';
 
 interface ExamDetail { exam: any; subjects: any[]; rule: any; }
@@ -114,7 +115,7 @@ function StartSeriesCard({ series }: { series: Series }) {
     alert(data.error ?? 'Kuch galat hua');
   }
 
-  // 🔐 Login modal
+  // 🔐 Login modal — official Telegram icon ke saath
   if (showLogin) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
