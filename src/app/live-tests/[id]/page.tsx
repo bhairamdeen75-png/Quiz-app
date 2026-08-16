@@ -118,7 +118,7 @@ export default function LiveTestPlayer() {
               onChange={(e) =>
                 setAnswers((p) => ({ ...p, [q.id]: e.target.value === '' ? (null as any) : Number(e.target.value) }))
               }
-              placeholder="Answer yahan likho (sirf number)"
+              placeholder="Write correct answer"
               className="w-full rounded-xl border-2 border-purple-200 bg-purple-50/50 px-4 py-3 text-center text-xl font-bold focus:border-purple-500 focus:outline-none"
             />
             <p className="mt-2 text-xs text-slate-400">Integer type — answer ek number hoga</p>
