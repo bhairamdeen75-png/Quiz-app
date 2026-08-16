@@ -34,26 +34,33 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   useEffect(() => {
     let cancelled = false;
 
-    // Fix: call the exam detail API (was calling /api/live-tests by mistake)
-    fetch(`/api/exams/${params.examId}`)
-      .then(async (r) => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error ?? 'Exam nahi mila');
-        return data as ExamDetail;
-      })
-      .then((data) => { if (!cancelled) { if (!data?.exam) setError('Exam nahi mila'); else setDetail(data); } })
-      .catch((e) => { if (!cancelled) setError(e.message); });
+    const fetchAllData = async () => {
+      try {
+        // ⚡ Teeno APIs ek sath (parallel) call hongi
+        const [detailRes, seriesRes, liveTestsRes] = await Promise.all([
+          fetch(`/api/exams/${params.examId}`), // ✅ Sahi endpoint Exam details ke liye (Apne backend ke hisaab se adjust kar lena)
+          fetch(`/api/series?examId=${params.examId}`),
+          fetch('/api/live-tests') // Sabhi live tests
+        ]);
 
-    fetch(`/api/series?examId=${params.examId}`)
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled) setSeries(data ?? []); })
-      .catch(() => { if (!cancelled) setSeries([]); });
+        const detailData = await detailRes.json();
+        if (!detailRes.ok) throw new Error(detailData.error ?? 'Exam nahi mila');
 
-    // ⚡ Sabhi live tests (sabhi exams ke) — purane bhi, kyunki practice mode mein de sakte hain
-    fetch('/api/live-tests')
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled) setLiveTests(data ?? []); })
-      .catch(() => { if (!cancelled) setLiveTests([]); });
+        const seriesData = await seriesRes.json();
+        const liveTestsData = await liveTestsRes.json();
+
+        if (!cancelled) {
+          setDetail(detailData as ExamDetail);
+          setSeries(seriesData ?? []);
+          // Sirf is exam ke live tests filter karne ho toh aap yahan logic laga sakte hain (agar required ho)
+          setLiveTests(liveTestsData ?? []);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e.message || 'Data fetch karne mein error aayi');
+      }
+    };
+
+    fetchAllData();
 
     return () => { cancelled = true; };
   }, [params.examId]);
@@ -68,7 +75,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   if (!detail || !detail.exam) return <p className="p-8 text-center text-slate-500">Loading...</p>;
 
   const subjects = detail.subjects ?? [];
-  const filtered = selectedSubject === 'all' ? series : series.filter((s: any) => s.subject_id === selectedSubject);
+  const filtered = selectedSubject === 'all' ? series : series.filter((s) => s.subject_id === selectedSubject);
 
   return (
     <div className="space-y-8">
@@ -90,7 +97,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
         <Link href="/pdf-upload" className="btn-outline">📄 PDF Upload Karo</Link>
       </div>
 
-      {/* ⚡ LIVE TESTS — sabhi exams ke, purane bhi */}
+      {/* ⚡ LIVE TESTS */}
       {liveTests.length > 0 && (
         <section>
           <h2 className="mb-3 text-xl font-bold">⚡ Live Tests <span className="text-sm font-normal text-slate-400">(is exam ke)</span></h2>
