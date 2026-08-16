@@ -18,7 +18,7 @@ create table if not exists live_tests (
 );
 create index if not exists idx_lt_exam on live_tests(exam_id);
 
--- ============ 3) LIVE TEST ATTEMPTS (ranking + Missed/Done) ============
+-- ============ 3) LIVE TEST ATTEMPTS ============
 create table if not exists live_test_attempts (
   id uuid primary key default gen_random_uuid(),
   live_test_id uuid references live_tests(id) on delete cascade not null,
@@ -41,16 +41,16 @@ create index if not exists idx_lta_lt on live_test_attempts(live_test_id);
 create index if not exists idx_lta_user on live_test_attempts(user_id);
 create index if not exists idx_lta_exam on live_test_attempts(exam_slug);
 
--- ============ 4) PROFILES — exam + naam + class ============
+-- ============ 4) PROFILES ============
 alter table profiles add column if not exists exam_slug text;
 alter table profiles add column if not exists student_name text;
 alter table profiles add column if not exists student_class text;
 alter table profiles add column if not exists onboarded boolean default false;
 
--- ============ 5) RLS ============
+-- ============ 5) RLS — ⚠️ auth.uid()::text cast zaroori (uuid vs text) ============
 alter table live_tests enable row level security;
 alter table live_test_attempts enable row level security;
 create policy "public read live tests" on live_tests for select using (true);
 create policy "public read attempts" on live_test_attempts for select using (true);
-create policy "own insert attempts" on live_test_attempts for insert with check (auth.uid() = user_id);
-create policy "own update attempts" on live_test_attempts for update using (auth.uid() = user_id);
+create policy "own insert attempts" on live_test_attempts for insert with check (auth.uid()::text = user_id);
+create policy "own update attempts" on live_test_attempts for update using (auth.uid()::text = user_id);
