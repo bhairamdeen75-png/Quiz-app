@@ -1,17 +1,25 @@
 'use client';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 
 const exams = [
-  { slug: 'jee', name: 'JEE Main', icon: '⚙️', desc: '75 Q · 15 Integer · 4/-1 marking' },
+  { slug: 'jee', name: 'JEE Main', icon: '⚙️', desc: '75 Q  · 4/-1 marking' },
   { slug: 'neet', name: 'NEET', icon: '🩺', desc: '180 Q · 4/-1 marking' },
   { slug: 'ssc-cgl', name: 'SSC CGL', icon: '🏛️', desc: '100 Q · 2/-0.5 marking' },
   { slug: 'upsc-prelims', name: 'UPSC Prelims', icon: '🎖️', desc: '100 Q · 2/-0.66 marking' },
 ];
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-gray-500">Loading...</div>}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [step, setStep] = useState<'exam' | 'login' | 'profile'>('exam');
