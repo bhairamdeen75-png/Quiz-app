@@ -1,0 +1,75 @@
+/.
+├─ .env.example
+├─ .gitignore
+├─ .github/
+├─ README.md
+├─ next.config.mjs
+├─ package.json
+├─ postcss.config.mjs
+├─ tailwind.config.ts
+├─ tsconfig.json
+├─ middleware.ts
+├─ public/
+│  └─ (public assets: images, icons, etc.)
+├─ data/
+├─ scripts/
+├─ supabase/
+└─ src/
+   ├─ app/
+   │  ├─ about/
+   │  │  └─ (page/route files)
+   │  ├─ admin-login/
+   │  ├─ admin/
+   │  ├─ ai-test/
+   │  ├─ api/
+   │  │  ├─ admin/
+   │  │  ├─ ai/
+   │  │  ├─ auth/
+   │  │  ├─ contact/
+   │  │  ├─ exams/
+   │  │  │  ├─ route.ts
+   │  │  │  └─ [examId]/
+   │  │  │     └─ route.ts
+   │  │  ├─ live-tests/
+   │  │  │  └─ route.ts
+   │  │  ├─ pdf/
+   │  │  ├─ profile/
+   │  │  ├─ series/
+   │  │  │  └─ route.ts
+   │  │  ├─ tests/
+   │  │  └─ (aur API route folders)
+   │  ├─ contact/
+   │  ├─ dashboard/
+   │  ├─ exams/
+   │  │  ├─ page.tsx                ← exams list (server component)
+   │  │  └─ [examId]/
+   │  │     └─ page.tsx             ← exam detail (client component)
+   │  ├─ live-tests/
+   │  ├─ login/
+   │  ├─ pdf-upload/
+   │  ├─ profile/
+   │  ├─ test/
+   │  ├─ icon.jpg
+   │  ├─ globals.css
+   │  ├─ layout.tsx
+   │  ├─ page.tsx
+   │  └─ not-found.tsx
+   ├─ components/
+   │  ├─ contact/
+   │  ├─ layout/
+   │  ├─ providers/
+   │  ├─ test/
+   │  └─ ui/
+   │     ├─ icons.tsx               ← TelegramIcon etc.
+   │     └─ (buttons, card, form components)
+   ├─ lib/
+   │  ├─ admin-auth.ts
+   │  ├─ auth-helpers.ts
+   │  ├─ auth.ts
+   │  ├─ messages.ts
+   │  ├─ supabase/
+   │  │  └─ (createClient helpers — server.ts / client helpers)
+   │  └─ utils/
+   ├─ types/
+   │  └─ (TypeScript type definitions)
+   └─ (aur kuch helper/config files)
