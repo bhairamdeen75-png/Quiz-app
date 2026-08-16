@@ -7,10 +7,27 @@ import { TelegramIcon } from '@/components/ui/icons';
 
 interface ExamDetail { exam: any; subjects: any[]; rule: any; }
 interface Series { id: string; name: string; question_count: number; duration_minutes: number; difficulty: string; }
+interface LiveTestInfo {
+  id: string;
+  name: string;
+  starts_at: string;
+  ends_at: string;
+  exam_slug: string | null;
+  exam_name: string | null;
+  duration_minutes: number;
+}
+
+function liveStatus(startsAt: string, endsAt: string): 'upcoming' | 'live' | 'closed' {
+  const now = Date.now();
+  if (now < new Date(startsAt).getTime()) return 'upcoming';
+  if (now <= new Date(endsAt).getTime()) return 'live';
+  return 'closed';
+}
 
 export default function ExamDetailPage({ params }: { params: { examId: string } }) {
   const [detail, setDetail] = useState<ExamDetail | null>(null);
   const [series, setSeries] = useState<Series[]>([]);
+  const [liveTests, setLiveTests] = useState<LiveTestInfo[]>([]);
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +47,14 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
       .then((r) => r.json())
       .then((data) => { if (!cancelled) setSeries(data ?? []); });
 
+    // ⚡ Sabhi live tests (sabhi exams ke) — purane bhi, kyunki practice mode mein de sakte hain
+    fetch('/api/live-tests')
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setLiveTests(data ?? []); });
+
     return () => { cancelled = true; };
   }, [params.examId]);
 
-  // ✅ Galt ID / missing exam → clean message, crash nahi
   if (error) return (
     <div className="p-8 text-center">
       <p className="text-lg font-semibold text-slate-700">{error}</p>
@@ -41,7 +62,6 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
     </div>
   );
 
-  // ✅ detail.exam exist karna chahiye — double guard
   if (!detail || !detail.exam) return <p className="p-8 text-center text-slate-500">Loading...</p>;
 
   const subjects = detail.subjects ?? [];
@@ -66,6 +86,45 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
         <Link href={`/ai-test?examId=${detail.exam.id}`} className="btn-primary">🤖 AI Test Banao</Link>
         <Link href="/pdf-upload" className="btn-outline">📄 PDF Upload Karo</Link>
       </div>
+
+      {/* ⚡ LIVE TESTS — sabhi exams ke, purane bhi */}
+      {liveTests.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-xl font-bold">⚡ Live Tests <span className="text-sm font-normal text-slate-400">(sabhi exams ke)</span></h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {liveTests.map((t) => {
+              const status = liveStatus(t.starts_at, t.ends_at);
+              return (
+                <div key={t.id} className="card">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold leading-snug">{t.name}</h3>
+                    {status === 'live' && (
+                      <span className="shrink-0 rounded-full bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white">🔴 LIVE</span>
+                    )}
+                    {status === 'upcoming' && (
+                      <span className="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-[11px] font-semibold text-gray-600">🕐 UPCOMING</span>
+                    )}
+                    {status === 'closed' && (
+                      <span className="shrink-0 rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700">⚪ PRACTICE</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {t.exam_name ?? 'Exam'} · {t.duration_minutes} min
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {status === 'upcoming' ? `📅 ${new Date(t.starts_at).toLocaleString()}` :
+                     status === 'live' ? '⏳ 48h window — ranking ke liye abhi do' :
+                     '✅ Window khatam — practice mode (ranking nahi)'}
+                  </p>
+                  <Link href={`/live-tests/${t.id}`} className="btn-primary mt-4 flex w-full items-center justify-center">
+                    {status === 'closed' ? 'Dobara Do' : 'Start →'}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-xl font-bold">Test Series</h2>
@@ -109,13 +168,11 @@ function StartSeriesCard({ series }: { series: Series }) {
 
     if (data.testId) { window.location.href = `/test/${data.testId}`; return; }
 
-    // 🔐 Login nahi hai → sundar modal dikhao
     if (res.status === 401 || data.needsLogin) { setShowLogin(true); return; }
 
     alert(data.error ?? 'Kuch galat hua');
   }
 
-  // 🔐 Login modal — official Telegram icon ke saath
   if (showLogin) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
