@@ -126,7 +126,7 @@ function LoginInner() {
             {/* App Icon */}
             <div className="mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-white shadow-[0_8px_20px_rgba(59,130,246,0.25)]">
               <img 
-                src="/public/icon.jpg" 
+                src="/icon.jpg" 
                 alt="App Icon" 
                 className="h-full w-full rounded-2xl object-cover"
               />
