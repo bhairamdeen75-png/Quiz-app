@@ -90,26 +90,28 @@ export default async function LiveTestResultPage({
         </p>
       </div>
 
-      {/* Ranking table */}
+      {/* Ranking table — mobile par horizontally scroll hoga, cut nahi */}
       <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="border-b border-gray-100 bg-slate-50 px-5 py-3 font-bold">🏆 Top 5 — Is Test Ki</div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b text-left text-xs text-slate-400">
-              <th className="px-5 py-2">Rank</th><th>Naam</th><th>Class</th><th>Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {top5.map((row, i) => (
-              <tr key={row.id} className={`border-b border-slate-50 last:border-0 ${row.user_id === session?.user?.id ? 'bg-amber-50' : ''}`}>
-                <td className="px-5 py-2.5 font-bold">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</td>
-                <td className="py-2.5 font-medium">{row.student_name}</td>
-                <td className="py-2.5 text-slate-500">{row.student_class ?? '—'}</td>
-                <td className="py-2.5 font-semibold">{row.score}/{row.max_score}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-slate-400">
+                <th className="px-5 py-2">Rank</th><th>Naam</th><th>Class</th><th>Score</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {top5.map((row, i) => (
+                <tr key={row.id} className={`border-b border-slate-50 last:border-0 ${row.user_id === session?.user?.id ? 'bg-amber-50' : ''}`}>
+                  <td className="px-5 py-2.5 font-bold">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</td>
+                  <td className="py-2.5 font-medium">{row.student_name}</td>
+                  <td className="py-2.5 text-slate-500">{row.student_class ?? '—'}</td>
+                  <td className="py-2.5 font-semibold">{row.score}/{row.max_score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="mt-6 text-center">
