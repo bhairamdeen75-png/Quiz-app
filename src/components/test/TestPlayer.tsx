@@ -7,12 +7,12 @@ import FeedbackPanel from './FeedbackPanel';
 
 interface Question {
   id: string;
-  type: string; // ⚡ Added to support q.type check
+  type: string;
   question_text: string;
   options: string[];
   difficulty: string;
-  correctIndex: number;      // ⚡ For MCQ
-  correct_value?: number | null; // ⚡ For Integer
+  correctIndex: number;          // ⚡ For MCQ
+  correctValue?: number | null;  // ⚡ For Integer — API 'correctValue' key se aata hai
   hint: string | null;
   explanation: string | null;
 }
@@ -64,9 +64,10 @@ export default function TestPlayer({ testId }: { testId: string }) {
       if (!q) return;
 
       // 1) Turant local match (MCQ ke liye correctIndex, Integer ke liye correct_value)
-      const isCorrect = q.type === 'integer'
-       ? optionIndex === q.correctValue
-       : optionIndex === q.correctIndex;
+      // ✅ SAHI:
+const isCorrect = q.type === 'integer'
+ ? answerValue === q.correctValue
+ : answerValue === q.correctIndex;
  
       setFeedback({
         correct: isCorrect,
