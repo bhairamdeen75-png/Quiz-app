@@ -159,6 +159,19 @@ async function main() {
           if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
             console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
           }
+          
+    // 🆕 INTEGER QUESTION — options/correctIndex ke bajaye "answer" check karo
+          const isIntegerQ = q.type === 'integer';
+          if (isIntegerQ) {
+            if (typeof q.answer !== 'number' || !Number.isFinite(q.answer)) {
+              console.error(`    ⚠️ skip (integer answer invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+            }
+          } else if (!Array.isArray(q.options) || q.options.length < 2) {
+            console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+          } else if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+            console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+          }
+          
           const chapterName = (q.chapter ?? '').trim();
           let chapterId = null;
           if (chapterName) {
@@ -176,25 +189,27 @@ async function main() {
             exam_id: exam.id,
             subject_id: subject.id,
             chapter_id: chapterId,
+            type: isIntegerQ ? 'integer' : 'mcq',
             question_text: q.question,
-            options: q.options,
-            correct_index: q.correctIndex,
+            options: isIntegerQ ? [] : q.options,
+            correct_index: isIntegerQ ? 0 : q.correctIndex,
+            correct_value: isIntegerQ ? q.answer : null,
             hint: q.hint ?? null,
             explanation: q.explanation ?? null,
             difficulty: DIFFS.includes(q.difficulty) ? q.difficulty : DIFFS.includes(raw.difficulty) ? raw.difficulty : 'medium',
             source: 'preloaded',
             is_approved: true,
           });
-        }
 
         for (const row of rows) {
           const existing = questionsByKey.get(`${exam.id}:${row.question_text}`);
           if (existing) {
             await patch('questions', existing.id, {
-              options: row.options, correct_index: row.correct_index,
+              options: row.options, correct_index: row.correct_index, correct_value: row.correct_value,
               hint: row.hint, explanation: row.explanation,
               difficulty: row.difficulty, chapter_id: row.chapter_id,
             });
+          }
           } else {
             await upsert('questions', row, 'id');
             questionsByKey.set(`${exam.id}:${row.question_text}`, row);
@@ -222,6 +237,24 @@ async function main() {
           stats.series++;
         }
 
+        // 5) LIVE TEST — sirf tab jab JSON me "live": true (48h window)
+        if (raw.live === true) {
+          const startsAt = raw.startsAt ? new Date(raw.startsAt).toISOString() : new Date().toISOString();
+          const endsAt = raw.endsAt
+            ? new Date(raw.endsAt).toISOString()
+            : new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+          await upsert('live_tests', {
+            id: detId('live', exam.id, raw.name),
+            exam_id: exam.id,
+            test_series_id: series.id,
+            name: raw.name,
+            starts_at: startsAt,
+            ends_at: endsAt,
+            is_active: true,
+          }, 'id');
+          stats.liveTests = (stats.liveTests ?? 0) + 1;
+        }
+  
         // 5) SERIES ↔ QUESTIONS MAPPING (composite PK pe upsert)
         const finalMappings = rows.map((r) => {
           const existing = questionsByKey.get(`${exam.id}:${r.question_text}`);
