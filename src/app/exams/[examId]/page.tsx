@@ -34,23 +34,26 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`/api/live-tests?examId=${params.examId}`)   // ⚡ Sirf is exam ke live tests
+    // Fix: call the exam detail API (was calling /api/live-tests by mistake)
+    fetch(`/api/exams/${params.examId}`)
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error ?? 'Exam nahi mila');
         return data as ExamDetail;
       })
-      .then((data) => { if (!cancelled) setDetail(data); })
+      .then((data) => { if (!cancelled) { if (!data?.exam) setError('Exam nahi mila'); else setDetail(data); } })
       .catch((e) => { if (!cancelled) setError(e.message); });
 
     fetch(`/api/series?examId=${params.examId}`)
       .then((r) => r.json())
-      .then((data) => { if (!cancelled) setSeries(data ?? []); });
+      .then((data) => { if (!cancelled) setSeries(data ?? []); })
+      .catch(() => { if (!cancelled) setSeries([]); });
 
     // ⚡ Sabhi live tests (sabhi exams ke) — purane bhi, kyunki practice mode mein de sakte hain
     fetch('/api/live-tests')
       .then((r) => r.json())
-      .then((data) => { if (!cancelled) setLiveTests(data ?? []); });
+      .then((data) => { if (!cancelled) setLiveTests(data ?? []); })
+      .catch(() => { if (!cancelled) setLiveTests([]); });
 
     return () => { cancelled = true; };
   }, [params.examId]);
@@ -65,7 +68,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   if (!detail || !detail.exam) return <p className="p-8 text-center text-slate-500">Loading...</p>;
 
   const subjects = detail.subjects ?? [];
-  const filtered = selectedSubject === 'all' ? series : series.filter((s) => s.subject_id === selectedSubject);
+  const filtered = selectedSubject === 'all' ? series : series.filter((s: any) => s.subject_id === selectedSubject);
 
   return (
     <div className="space-y-8">
