@@ -34,7 +34,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`/api/exams/${params.examId}`)
+    fetch(`/api/live-tests?examId=${params.examId}`)   // ⚡ Sirf is exam ke live tests
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error ?? 'Exam nahi mila');
@@ -90,7 +90,7 @@ export default function ExamDetailPage({ params }: { params: { examId: string } 
       {/* ⚡ LIVE TESTS — sabhi exams ke, purane bhi */}
       {liveTests.length > 0 && (
         <section>
-          <h2 className="mb-3 text-xl font-bold">⚡ Live Tests <span className="text-sm font-normal text-slate-400">(sabhi exams ke)</span></h2>
+          <h2 className="mb-3 text-xl font-bold">⚡ Live Tests <span className="text-sm font-normal text-slate-400">(is exam ke)</span></h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {liveTests.map((t) => {
               const status = liveStatus(t.starts_at, t.ends_at);
