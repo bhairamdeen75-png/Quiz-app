@@ -7,10 +7,12 @@ import FeedbackPanel from './FeedbackPanel';
 
 interface Question {
   id: string;
+  type: string; // ⚡ Added to support q.type check
   question_text: string;
   options: string[];
   difficulty: string;
-  correctIndex: number;      // ⚡ preloaded — instant match ke liye
+  correctIndex: number;      // ⚡ For MCQ
+  correct_value?: number | null; // ⚡ For Integer
   hint: string | null;
   explanation: string | null;
 }
@@ -56,16 +58,19 @@ export default function TestPlayer({ testId }: { testId: string }) {
 
   // ⚡ Answer check AB LOCAL HAI — 0ms, koi network call nahi
   const submitAnswer = useCallback(
-    async (questionId: string, optionIndex: number) => {
+    async (questionId: string, answerValue: number) => {
       if (!test) return;
       const q = test.questions.find((qq) => qq.id === questionId);
       if (!q) return;
 
-      // 1) Turant local match — sahi/galat + hint + explanation 0ms me
-      const isCorrect = optionIndex === q.correctIndex;
+      // 1) Turant local match (MCQ ke liye correctIndex, Integer ke liye correct_value)
+      const isCorrect = q.type === 'integer'
+       ? optionIndex === q.correctValue
+       : optionIndex === q.correctIndex;
+ 
       setFeedback({
         correct: isCorrect,
-        correctIndex: q.correctIndex,
+        correctIndex: q.type === 'integer' ? (q.correct_value ?? -1) : q.correctIndex,
         hint: q.hint,
         explanation: q.explanation,
       });
@@ -76,10 +81,10 @@ export default function TestPlayer({ testId }: { testId: string }) {
         await fetch(`/api/tests/${testId}/answer`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questionId, userAnswer: optionIndex }),
+          body: JSON.stringify({ questionId, userAnswer: answerValue }),
         });
       } catch {
-        // Network fail ho jaye to submit pe answers phir bhi sync ho jayenge (File 3)
+        // Network fail ho jaye to submit pe answers phir bhi sync ho jayenge
       }
     },
     [test, testId, current]
@@ -112,24 +117,46 @@ export default function TestPlayer({ testId }: { testId: string }) {
         <div className="card">
           <p className="text-xs font-semibold text-slate-400">Question {current + 1} / {test.questions.length} · {q.difficulty}</p>
           <p className="mt-3 text-lg font-medium">{q.question_text}</p>
-          <div className="mt-5 space-y-3">
-            {q.options.map((opt, i) => {
-              const isSelected = selected === i;
-              const showFeedback = feedback && i === feedback.correctIndex;
-              const showWrong = feedback && isSelected && i !== feedback.correctIndex;
-              return (
-                <button key={i}
-                  onClick={() => { setAnswers((p) => ({ ...p, [q.id]: i })); submitAnswer(q.id, i); }}
-                  disabled={!!feedback && test.answerMode === 'instant'}
-                  className={`w-full rounded-xl border p-4 text-left transition
-                    ${showFeedback ? 'border-green-500 bg-green-50' :
-                      showWrong ? 'border-red-500 bg-red-50' :
-                      isSelected ? 'border-brand bg-brand/5' : 'hover:border-brand/50'}`}>
-                  <span className="font-semibold">{String.fromCharCode(65 + i)}.</span> {opt}
-                </button>
-              );
-            })}
-          </div>
+          
+          {/* ⚡ MCQ Options Render */}
+          {q.type !== 'integer' && (
+            <div className="mt-5 space-y-3">
+              {q.options.map((opt, i) => {
+                const isSelected = selected === i;
+                const showFeedback = feedback && i === feedback.correctIndex;
+                const showWrong = feedback && isSelected && i !== feedback.correctIndex;
+                return (
+                  <button key={i}
+                    onClick={() => { setAnswers((p) => ({ ...p, [q.id]: i })); submitAnswer(q.id, i); }}
+                    disabled={!!feedback && test.answerMode === 'instant'}
+                    className={`w-full rounded-xl border p-4 text-left transition
+                      ${showFeedback ? 'border-green-500 bg-green-50' :
+                        showWrong ? 'border-red-500 bg-red-50' :
+                        isSelected ? 'border-brand bg-brand/5' : 'hover:border-brand/50'}`}>
+                    <span className="font-semibold">{String.fromCharCode(65 + i)}.</span> {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ⚡ Integer type render — normal preload tests ke liye */}
+          {q.type === 'integer' && (
+            <div className="mt-5">
+              <input
+                type="number"
+                value={(answers[q.id] ?? '') as any}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? null : Number(e.target.value);
+                  setAnswers((p) => ({ ...p, [q.id]: v as any }));
+                  if (v !== null) submitAnswer(q.id, v);
+                }}
+                disabled={!!feedback && test.answerMode === 'instant'}
+                placeholder="Number answer likho"
+                className="w-full rounded-xl border-2 border-purple-200 bg-purple-50/50 px-4 py-3 text-center text-xl font-bold focus:border-purple-500 focus:outline-none disabled:opacity-75"
+              />
+            </div>
+          )}
         </div>
 
         {feedback && <FeedbackPanel {...feedback} options={q.options} />}
