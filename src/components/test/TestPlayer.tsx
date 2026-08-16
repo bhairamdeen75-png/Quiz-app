@@ -29,6 +29,8 @@ interface TestData {
 interface Feedback {
   correct: boolean;
   correctIndex: number;
+  correctValue: number | null;
+  isInteger: boolean;
   hint: string | null;
   explanation: string | null;
 }
@@ -37,10 +39,12 @@ export default function TestPlayer({ testId }: { testId: string }) {
   const router = useRouter();
   const [test, setTest] = useState<TestData | null>(null);
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number | null | undefined>>({});
   const [answeredFlags, setAnsweredFlags] = useState<Record<number, boolean>>({});
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);               // transient (current question)
+  const [feedbackMap, setFeedbackMap] = useState<Record<number, Feedback>>({}); // har question ka permanent feedback
   const startedAtRef = useRef<string>('');
+  const intTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/tests/${testId}/questions`)
@@ -56,28 +60,31 @@ export default function TestPlayer({ testId }: { testId: string }) {
       .catch(() => setTest(null));
   }, [testId, router]);
 
-  // ⚡ Answer check AB LOCAL HAI — 0ms, koi network call nahi
+  // ⚡ Answer check LOCAL hai — 0ms, koi network call nahi
   const submitAnswer = useCallback(
     async (questionId: string, answerValue: number) => {
       if (!test) return;
       const q = test.questions.find((qq) => qq.id === questionId);
       if (!q) return;
 
-      // 1) Turant local match (MCQ ke liye correctIndex, Integer ke liye correct_value)
-      // ✅ SAHI:
-const isCorrect = q.type === 'integer'
- ? answerValue === q.correctValue
- : answerValue === q.correctIndex;
- 
-      setFeedback({
+      const isInteger = q.type === 'integer';
+      const isCorrect = isInteger ? answerValue === q.correctValue : answerValue === q.correctIndex;
+
+      const fb: Feedback = {
         correct: isCorrect,
-        correctIndex: q.type === 'integer' ? (q.correct_value ?? -1) : q.correctIndex,
+        correctIndex: q.correctIndex,
+        correctValue: q.correctValue ?? null,
+        isInteger,
         hint: q.hint,
         explanation: q.explanation,
-      });
+      };
+
+      // Turant feedback sirf tab dikhao jab user abhi isi question par ho
+      if (test.questions[current]?.id === questionId) setFeedback(fb);
+      setFeedbackMap((prev) => ({ ...prev, [current]: fb }));
       setAnsweredFlags((prev) => ({ ...prev, [current]: true }));
 
-      // 2) Background me DB sync (fire-and-forget — UI block nahi hota)
+      // Background me DB sync (fire-and-forget — UI block nahi hota)
       try {
         await fetch(`/api/tests/${testId}/answer`, {
           method: 'POST',
@@ -100,10 +107,24 @@ const isCorrect = q.type === 'integer'
     router.push(`/test/${testId}/result`);
   }, [testId, router, answers]);
 
+  // Integer typing: 600ms debounce — pura number type kar pao, phir turant check
+  const handleIntegerChange = useCallback(
+    (qid: string, v: string) => {
+      if (intTimer.current) clearTimeout(intTimer.current);
+      setAnswers((p) => ({ ...p, [qid]: v === '' ? undefined : Number(v) }));
+      if (v === '') return;
+      intTimer.current = setTimeout(() => submitAnswer(qid, Number(v)), 600);
+    },
+    [submitAnswer]
+  );
+
   if (!test) return <p className="p-8 text-center text-slate-500">Test load ho raha hai...</p>;
 
   const q = test.questions[current];
   const selected = answers[q.id];
+  const fb = feedback ?? feedbackMap[current] ?? null;
+  // instant mode: ek baar answer kiya to question LOCK — dobara change nahi kar sakte
+  const locked = test.answerMode === 'instant' && !!answeredFlags[current];
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
@@ -118,18 +139,18 @@ const isCorrect = q.type === 'integer'
         <div className="card">
           <p className="text-xs font-semibold text-slate-400">Question {current + 1} / {test.questions.length} · {q.difficulty}</p>
           <p className="mt-3 text-lg font-medium">{q.question_text}</p>
-          
-          {/* ⚡ MCQ Options Render */}
+
+          {/* ⚡ MCQ Options */}
           {q.type !== 'integer' && (
             <div className="mt-5 space-y-3">
               {q.options.map((opt, i) => {
                 const isSelected = selected === i;
-                const showFeedback = feedback && i === feedback.correctIndex;
-                const showWrong = feedback && isSelected && i !== feedback.correctIndex;
+                const showFeedback = fb && i === fb.correctIndex;
+                const showWrong = fb && isSelected && !fb.correct;
                 return (
                   <button key={i}
                     onClick={() => { setAnswers((p) => ({ ...p, [q.id]: i })); submitAnswer(q.id, i); }}
-                    disabled={!!feedback && test.answerMode === 'instant'}
+                    disabled={locked}
                     className={`w-full rounded-xl border p-4 text-left transition
                       ${showFeedback ? 'border-green-500 bg-green-50' :
                         showWrong ? 'border-red-500 bg-red-50' :
@@ -141,32 +162,40 @@ const isCorrect = q.type === 'integer'
             </div>
           )}
 
-          {/* ⚡ Integer type render — normal preload tests ke liye */}
+          {/* ⚡ Integer type — answer likhte hi check + lock */}
           {q.type === 'integer' && (
             <div className="mt-5">
               <input
                 type="number"
+                inputMode="numeric"
                 value={(answers[q.id] ?? '') as any}
-                onChange={(e) => {
-                  const v = e.target.value === '' ? null : Number(e.target.value);
-                  setAnswers((p) => ({ ...p, [q.id]: v as any }));
-                  if (v !== null) submitAnswer(q.id, v);
-                }}
-                disabled={!!feedback && test.answerMode === 'instant'}
+                onChange={(e) => handleIntegerChange(q.id, e.target.value)}
+                disabled={locked}
                 placeholder="Number answer likho"
-                className="w-full rounded-xl border-2 border-purple-200 bg-purple-50/50 px-4 py-3 text-center text-xl font-bold focus:border-purple-500 focus:outline-none disabled:opacity-75"
+                className={`w-full rounded-xl border-2 px-4 py-3 text-center text-xl font-bold focus:outline-none disabled:opacity-75 ${
+                  fb
+                    ? (fb.correct ? 'border-green-500 bg-green-50 focus:border-green-500' : 'border-red-400 bg-red-50 focus:border-red-400')
+                    : 'border-purple-200 bg-purple-50/50 focus:border-purple-500'
+                }`}
               />
+              {!locked && !fb && (
+                <p className="mt-2 text-xs text-slate-400">💡 Answer likhte hi correct/wrong + hint dikh jayega</p>
+              )}
             </div>
           )}
         </div>
 
-        {feedback && <FeedbackPanel {...feedback} options={q.options} />}
+        {fb && (
+          <FeedbackPanel correct={fb.correct} correctIndex={fb.correctIndex} correctValue={fb.correctValue}
+            isInteger={fb.isInteger} options={q.options} hint={fb.hint} explanation={fb.explanation} />
+        )}
 
         <div className="flex justify-between">
-          <button onClick={() => setCurrent((c) => Math.max(0, c - 1))} disabled={current === 0}
-            className="btn-outline">← Pichhla</button>
+          <button onClick={() => { clearTimeout(intTimer.current ?? undefined); setFeedback(null); setCurrent((c) => Math.max(0, c - 1)); }}
+            disabled={current === 0} className="btn-outline">← Pichhla</button>
           {current < test.questions.length - 1 ? (
-            <button onClick={() => { setFeedback(null); setCurrent((c) => c + 1); }} className="btn-primary">Agla →</button>
+            <button onClick={() => { clearTimeout(intTimer.current ?? undefined); setFeedback(null); setCurrent((c) => c + 1); }}
+              className="btn-primary">Agla →</button>
           ) : (
             <button onClick={finalSubmit} className="btn-primary">✅ Submit Test</button>
           )}
@@ -177,7 +206,7 @@ const isCorrect = q.type === 'integer'
       <aside className="card h-fit space-y-4 lg:sticky lg:top-20">
         <p className="font-bold">Question Palette</p>
         <QuestionPalette total={test.questions.length} answered={answeredFlags}
-          current={current} onJump={(i) => { setFeedback(null); setCurrent(i); }} />
+          current={current} onJump={(i) => { clearTimeout(intTimer.current ?? undefined); setFeedback(null); setCurrent(i); }} />
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="h-3 w-3 rounded bg-green-500" /> Answered
           <span className="ml-2 h-3 w-3 rounded bg-slate-200" /> Unanswered
