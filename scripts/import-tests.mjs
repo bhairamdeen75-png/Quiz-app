@@ -7,6 +7,13 @@
  *    Format 1 (single object): { "name": "...", "subject": "...", "questions": [...] }
  *    Format 2 (array):         [ { "name": "...", ... }, { "name": "...", ... } ]
  *
+ * ✅ QUESTION TYPES:
+ *    MCQ:      { "question": "...", "options": [...], "correctIndex": n, ... }
+ *    INTEGER:  { "question": "...", "type": "integer", "answer": 42, ... }
+ *
+ * ✅ LIVE TEST (48h window + ranking):
+ *    { "live": true, "startsAt": "...", "endsAt": "...", ... }
+ *
  * Idempotent: bar-bar chalao, duplicate kabhi nahi banega.
  */
 import { readdirSync, readFileSync } from 'fs';
@@ -27,7 +34,7 @@ const H = {
   Accept: 'application/json',
   'Content-Type': 'application/json',
 };
-const JH = { ...H, Prefer: 'return=representation' };
+const JH = { ...H, Prefer: 'return=representation,resolution=merge-duplicates' };
 
 const DATA_DIR = join(process.cwd(), 'data');
 const NAMESPACE = 'quizapp-hindi-tests-v1';
@@ -42,69 +49,64 @@ function detId(...parts) {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
-// Saari rows (1000 ke chunks me)
+// ---------- Supabase REST helpers ----------
 async function getAll(table) {
   const out = [];
-  let from = 0;
-  for (;;) {
-    const res = await fetch(`${BASE}/${table}?select=*`, {
-      headers: { ...H, Range: `${from}-${from + 999}` },
-    });
-    if (!res.ok) throw new Error(`GET ${table}: ${res.status} ${await res.text()}`);
+  let offset = 0;
+  while (true) {
+    const res = await fetch(`${BASE}/${table}?select=*&limit=1000&offset=${offset}`, { headers: H });
+    if (!res.ok) throw new Error(`getAll ${table}: ${res.status} ${await res.text()}`);
     const rows = await res.json();
     out.push(...rows);
     if (rows.length < 1000) break;
-    from += 1000;
+    offset += 1000;
   }
   return out;
 }
 
-// Upsert: same id pe merge (update), warna insert
-async function upsert(table, rows, onConflict) {
-  const arr = Array.isArray(rows) ? rows : [rows];
-  if (!arr.length) return [];
-  const qs = onConflict ? `?on_conflict=${onConflict}` : '';
-  const res = await fetch(`${BASE}/${table}${qs}`, {
+async function upsert(table, rows, conflictCols) {
+  const body = Array.isArray(rows) ? rows : [rows];
+  const res = await fetch(`${BASE}/${table}?on_conflict=${conflictCols}`, {
     method: 'POST',
-    headers: { ...JH, Prefer: 'resolution=merge-duplicates,return=representation' },
-    body: JSON.stringify(arr),
+    headers: JH,
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`POST ${table}: ${res.status} ${await res.text()}`);
-  return res.json();
+  if (!res.ok) throw new Error(`upsert ${table}: ${res.status} ${await res.text()}`);
 }
 
-// Update by id
 async function patch(table, id, data) {
   const res = await fetch(`${BASE}/${table}?id=eq.${id}`, {
     method: 'PATCH',
-    headers: JH,
+    headers: H,
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`PATCH ${table}: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`patch ${table}: ${res.status} ${await res.text()}`);
 }
 
-const stats = { exams: 0, subjects: 0, chapters: 0, questions: 0, series: 0, mappings: 0 };
-
+// ---------- Main ----------
 async function main() {
-  const examDirs = readdirSync(DATA_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith('.'));
-  if (!examDirs.length) { console.log('⚠️ data/ me koi exam folder nahi'); return; }
+  const stats = { exams: 0, subjects: 0, chapters: 0, questions: 0, series: 0, mappings: 0, liveTests: 0 };
 
-  // Ek baar sab load karo (lookup ke liye — isi se duplicates nahi bante)
+  const examDirs = readdirSync(DATA_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+  if (!examDirs.length) {
+    console.error('❌ data/ folder me koi exam directory nahi mili');
+    process.exit(1);
+  }
+
   const examsBySlug = new Map((await getAll('exams')).map((e) => [e.slug, e]));
   const subjectsByKey = new Map((await getAll('subjects')).map((s) => [`${s.exam_id}:${s.name}`, s]));
   const chaptersByKey = new Map((await getAll('chapters')).map((c) => [`${c.subject_id}:${c.name}`, c]));
   const questionsByKey = new Map((await getAll('questions')).map((q) => [`${q.exam_id}:${q.question_text}`, q]));
   const seriesByKey = new Map((await getAll('test_series')).map((s) => [`${s.exam_id}:${s.name}`, s]));
 
-  for (const dir of examDirs) {
-    const slug = dir.name;
+  for (const slug of examDirs) {
     const files = readdirSync(join(DATA_DIR, slug)).filter((f) => f.endsWith('.json'));
     if (!files.length) { console.log(`ℹ️ ${slug}: koi .json file nahi`); continue; }
     console.log(`\n📂 Exam: ${slug} (${files.length} file)`);
 
     for (const file of files) {
-      // JSON parse — error ho to file skip karke aage badho
       let parsed;
       try {
         parsed = JSON.parse(readFileSync(join(DATA_DIR, slug, file), 'utf8'));
@@ -113,7 +115,6 @@ async function main() {
         continue;
       }
 
-      // ✅ ARRAY FORMAT BHI SUPPORT — ek file me ek se zyada tests
       const tests = Array.isArray(parsed) ? parsed : [parsed];
       console.log(`  📄 ${file}: ${tests.length} test(s)`);
 
@@ -122,9 +123,9 @@ async function main() {
           console.error(`    ⚠️ Ek test object me "name" missing hai — skip`);
           continue;
         }
-        console.log(`    ▶ ${raw.name}`);
+        console.log(`    ▶ ${raw.name}${raw.live === true ? ' 🔴 LIVE' : ''}`);
 
-        // 1) EXAM — slug se dhoondo, nahi mila to create
+        // 1) EXAM
         let exam = examsBySlug.get(slug);
         if (!exam) {
           exam = {
@@ -150,28 +151,27 @@ async function main() {
           stats.subjects++;
         }
 
-        // 3) CHAPTERS + QUESTIONS
+        // 3) CHAPTERS + QUESTIONS (MCQ + INTEGER dono)
         const rows = [];
         for (const q of raw.questions ?? []) {
-          if (!Array.isArray(q.options) || q.options.length < 2) {
-            console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+          if (!q || typeof q.question !== 'string' || !q.question.trim()) {
+            console.error(`    ⚠️ skip (question text missing)`);
+            continue;
           }
-          if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
-            console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
-          }
-          
-    // 🆕 INTEGER QUESTION — options/correctIndex ke bajaye "answer" check karo
           const isIntegerQ = q.type === 'integer';
           if (isIntegerQ) {
             if (typeof q.answer !== 'number' || !Number.isFinite(q.answer)) {
               console.error(`    ⚠️ skip (integer answer invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
             }
-          } else if (!Array.isArray(q.options) || q.options.length < 2) {
-            console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
-          } else if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
-            console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+          } else {
+            if (!Array.isArray(q.options) || q.options.length < 2) {
+              console.error(`    ⚠️ skip (options invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+            }
+            if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+              console.error(`    ⚠️ skip (correctIndex invalid): ${String(q.question ?? '').slice(0, 40)}...`); continue;
+            }
           }
-          
+
           const chapterName = (q.chapter ?? '').trim();
           let chapterId = null;
           if (chapterName) {
@@ -184,6 +184,7 @@ async function main() {
             }
             chapterId = chapter.id;
           }
+
           rows.push({
             id: detId('question', exam.id, q.question),
             exam_id: exam.id,
@@ -200,16 +201,21 @@ async function main() {
             source: 'preloaded',
             is_approved: true,
           });
+        }
 
         for (const row of rows) {
           const existing = questionsByKey.get(`${exam.id}:${row.question_text}`);
           if (existing) {
             await patch('questions', existing.id, {
-              options: row.options, correct_index: row.correct_index, correct_value: row.correct_value,
-              hint: row.hint, explanation: row.explanation,
-              difficulty: row.difficulty, chapter_id: row.chapter_id,
+              type: row.type,
+              options: row.options,
+              correct_index: row.correct_index,
+              correct_value: row.correct_value,
+              hint: row.hint,
+              explanation: row.explanation,
+              difficulty: row.difficulty,
+              chapter_id: row.chapter_id,
             });
-          }
           } else {
             await upsert('questions', row, 'id');
             questionsByKey.set(`${exam.id}:${row.question_text}`, row);
@@ -252,10 +258,10 @@ async function main() {
             ends_at: endsAt,
             is_active: true,
           }, 'id');
-          stats.liveTests = (stats.liveTests ?? 0) + 1;
+          stats.liveTests++;
         }
-  
-        // 5) SERIES ↔ QUESTIONS MAPPING (composite PK pe upsert)
+
+        // 6) SERIES ↔ QUESTIONS MAPPING
         const finalMappings = rows.map((r) => {
           const existing = questionsByKey.get(`${exam.id}:${r.question_text}`);
           return { test_series_id: series.id, question_id: existing ? existing.id : r.id };
@@ -268,7 +274,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ Import complete: ${stats.exams} exams · ${stats.subjects} subjects · ${stats.chapters} chapters · ${stats.questions} questions · ${stats.series} series · ${stats.mappings} mappings`);
+  console.log(`\n✅ Import complete: ${stats.exams} exams · ${stats.subjects} subjects · ${stats.chapters} chapters · ${stats.questions} questions · ${stats.series} series · ${stats.liveTests} live · ${stats.mappings} mappings`);
 }
 
 main().catch((e) => { console.error('❌', e.message || e); process.exit(1); });
