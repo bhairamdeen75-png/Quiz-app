@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { testId: string 
   // taaki client pe turant (0ms) match ho sake — koi extra network call nahi
   const { data: questions } = await supabase
     .from('questions')
-    .select('id, type, question_text, options, difficulty, correct_index, hint, explanation')
+    .select('id, type, question_text, options, difficulty, correct_index, correct_value, hint, explanation')
     .in('id', test.question_ids);
 
   const publicQuestions = (questions ?? []).map((q) => ({
@@ -29,6 +29,7 @@ export async function GET(_req: Request, { params }: { params: { testId: string 
     correctIndex: q.correct_index,
     hint: q.hint,
     explanation: q.explanation,
+    correctValue: q.correct_value,
   }));
 
   return NextResponse.json({
