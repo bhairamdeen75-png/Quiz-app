@@ -33,6 +33,13 @@ export default function Navbar() {
           ) : (
             <>
               <Link
+                 href="/live-tests"
+                 title="Live Tests & Ranking"
+                 className="text-lg text-brand/60 transition hover:scale-110 hover:text-brand"
+               >
+                 🏆
+              </Link>
+              <Link
                 href="/admin-login"
                 title="Admin Login"
                 className="text-lg text-brand/60 transition hover:scale-110 hover:text-brand"
