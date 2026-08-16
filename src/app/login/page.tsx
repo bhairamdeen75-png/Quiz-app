@@ -3,12 +3,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 
-const exams = [
-  { slug: 'jee', name: 'JEE Main', icon: '⚙️', desc: '75 Q · 15 Integer · 4/-1 marking' },
-  { slug: 'neet', name: 'NEET', icon: '🩺', desc: '180 Q · 4/-1 marking' },
-  { slug: 'ssc-cgl', name: 'SSC CGL', icon: '🏛️', desc: '100 Q · 2/-0.5 marking' },
-  { slug: 'upsc-prelims', name: 'UPSC Prelims', icon: '🎖️', desc: '100 Q · 2/-0.66 marking' },
-];
+interface Exam {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  description?: string;
+}
 
 export default function LoginPage() {
   return (
@@ -22,16 +23,31 @@ function LoginInner() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [examsLoading, setExamsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [studentClass, setStudentClass] = useState('');
-  const [exam, setExam] = useState('jee');
+  const [exam, setExam] = useState('');
   const [profileChecked, setProfileChecked] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
 
   const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+
+  // 📚 Saare active exams DB se — 4 nahi, 10+ (naya exam add hua toh yahan bhi dikhega)
+  useEffect(() => {
+    fetch('/api/exams')
+      .then((r) => r.json())
+      .then((data: Exam[]) => {
+        const list = Array.isArray(data) ? data : [];
+        setExams(list);
+        if (list.length > 0) setExam((prev) => prev || list[0].slug);
+      })
+      .catch(() => {})
+      .finally(() => setExamsLoading(false));
+  }, []);
 
   // Google login ke baad profile check karo
   useEffect(() => {
@@ -64,6 +80,10 @@ function LoginInner() {
       setError('Apna pura naam likho');
       return;
     }
+    if (!exam) {
+      setError('Exam choose karo');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -94,11 +114,13 @@ function LoginInner() {
     );
   }
 
+  const selectedExam = exams.find((e) => e.slug === exam);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-center text-2xl font-bold text-gray-900">📚 Quiz App</h1>
-        <p className="mt-1 text-center text-sm text-gray-500">JEE · NEET · SSC · UPSC practice</p>
+        <p className="mt-1 text-center text-sm text-gray-500">10+ exams — JEE, NEET, SSC, UPSC aur aur bhi</p>
 
         {/* STEP 1: GOOGLE LOGIN */}
         {!session?.user && (
@@ -166,39 +188,47 @@ function LoginInner() {
                 </select>
               </div>
 
-              {/* Exam */}
+              {/* Exam — saare exams DB se */}
               <div>
                 <label className="text-sm font-medium text-gray-700">Exam Choose Karo</label>
-                <div className="mt-1 grid grid-cols-2 gap-2">
-                  {exams.map((e) => (
-                    <button
-                      key={e.slug}
-                      type="button"
-                      onClick={() => setExam(e.slug)}
-                      className={`relative flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition ${
-                        exam === e.slug
-                          ? 'border-indigo-600 bg-indigo-50'
-                          : 'border-gray-200 hover:border-indigo-300'
-                      }`}
-                    >
-                      <span className="text-lg">{e.icon}</span>
-                      <span className="text-sm font-semibold text-gray-900">{e.name}</span>
-                      <span className="text-[11px] leading-tight text-gray-500">{e.desc}</span>
-                      {exam === e.slug && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] text-white">✓</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {examsLoading ? (
+                  <p className="mt-1 text-sm text-gray-400">Exams load ho rahe hain...</p>
+                ) : exams.length === 0 ? (
+                  <p className="mt-1 text-sm text-red-500">Koi exam nahi mila — baad mein try karo</p>
+                ) : (
+                  <div className="mt-1 grid max-h-[300px] grid-cols-2 gap-2 overflow-y-auto pr-1">
+                    {exams.map((e) => (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => setExam(e.slug)}
+                        className={`relative flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition ${
+                          exam === e.slug
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-gray-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        <span className="text-lg">{e.icon}</span>
+                        <span className="text-sm font-semibold text-gray-900">{e.name}</span>
+                        {e.description && (
+                          <span className="line-clamp-2 text-[11px] leading-tight text-gray-500">{e.description}</span>
+                        )}
+                        {exam === e.slug && (
+                          <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] text-white">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Continue */}
               <button
                 onClick={saveProfile}
-                disabled={saving || !name.trim()}
+                disabled={saving || !name.trim() || !exam}
                 className="w-full rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
               >
-                {saving ? 'Saving...' : '✅ Continue'}
+                {saving ? 'Saving...' : `✅ Continue${selectedExam ? ` — ${selectedExam.name}` : ''}`}
               </button>
             </div>
           </>
