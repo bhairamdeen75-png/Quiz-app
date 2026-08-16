@@ -40,7 +40,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     title: lt.name,
     status: 'in_progress',
     question_ids: questions.map((q: any) => q.id),
-    answer_mode: 'final',
+    answer_mode: 'instant',   // ⚡ Live test: answer karte hi correct/wrong + hint/explanation dikhe, answer LOCK ho jaye
     duration_seconds: durationSeconds,
   }).select().single();
   if (e2 || !attempt) return NextResponse.json({ error: 'Test attempt ban nahi paya' }, { status: 500 });
